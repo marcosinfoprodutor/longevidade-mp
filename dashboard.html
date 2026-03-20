@@ -8,6 +8,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -224,50 +228,407 @@ canvas{max-height:340px}
 .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
 .empty-state .es-icon{font-size:40px;margin-bottom:12px}
 .empty-state p{font-size:14px}
-</style>
-<style>
-#auth-wall{position:fixed;inset:0;background:#F4F6FA;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Inter',-apple-system,sans-serif}
-#auth-wall.hidden{display:none}
-.auth-card{background:#fff;border:1px solid #E5E8EF;border-radius:16px;padding:40px 36px;width:100%;max-width:360px;box-shadow:0 4px 24px rgba(0,0,0,.07)}
-.auth-logo{width:42px;height:42px;background:#4F46E5;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:20px}
-.auth-title{font-size:18px;font-weight:700;color:#111827;margin-bottom:4px}
-.auth-sub{font-size:13px;color:#6B7280;margin-bottom:28px}
-.auth-label{font-size:11px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
-.auth-input{width:100%;padding:10px 14px;border:1.5px solid #E5E8EF;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;color:#111827}
-.auth-input:focus{border-color:#4F46E5}
-.auth-btn{width:100%;margin-top:16px;padding:11px;background:#4F46E5;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
-.auth-btn:hover{background:#4338CA}
-.auth-error{margin-top:12px;font-size:12px;color:#DC2626;text-align:center;display:none}
+
+/* ── LOGIN SCREEN ──────────────────────────────────── */
+#login-screen{position:fixed;inset:0;background:#F4F6FA;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Inter',-apple-system,sans-serif}
+.lc{background:#fff;border:1px solid #E5E8EF;border-radius:16px;padding:40px;width:100%;max-width:400px;box-shadow:0 4px 32px rgba(0,0,0,.1)}
+.lc-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.lc-logo-icon{width:38px;height:38px;background:#4F46E5;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0}
+.lc-logo-name{font-size:15px;font-weight:700;color:#111827}
+.lc-logo-sub{font-size:11px;color:#6B7280}
+.lc-title{font-size:22px;font-weight:800;color:#111827;margin-bottom:4px}
+.lc-sub{font-size:12px;color:#6B7280;margin-bottom:24px}
+.lc-field{margin-bottom:14px}
+.lc-field label{display:block;font-size:11px;font-weight:600;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.lc-field input{width:100%;padding:10px 14px;border:1px solid #E5E8EF;border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border .15s;background:#fff;color:#111827;box-sizing:border-box}
+.lc-field input:focus{border-color:#4F46E5;box-shadow:0 0 0 3px rgba(79,70,229,.08)}
+.lc-btn{width:100%;padding:11px;background:#4F46E5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;margin-top:4px}
+.lc-btn:hover{background:#4338CA}
+.lc-btn:disabled{background:#9CA3AF;cursor:not-allowed}
+.lc-forgot{text-align:center;margin-top:14px;font-size:12px;color:#6B7280}
+.lc-forgot a{color:#4F46E5;text-decoration:none;font-weight:500;cursor:pointer}
+.lc-forgot a:hover{text-decoration:underline}
+.lc-msg{border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:14px;display:none}
+.lc-err{background:#FEF2F2;border:1px solid #FECACA;color:#DC2626}
+.lc-ok{background:#ECFDF5;border:1px solid #A7F3D0;color:#059669}
+/* ── TOPBAR USER ──────────────────────────────────── */
+.tb-user{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.tb-user-avatar{width:28px;height:28px;border-radius:50%;background:var(--indigo-l);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--indigo);flex-shrink:0}
+.tb-logout{padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;font-size:11px;color:var(--muted);font-family:inherit;transition:all .15s}
+.tb-logout:hover{background:var(--red-l);color:var(--red);border-color:var(--red)}
+.tb-admin-btn{padding:5px 10px;border:1px solid var(--indigo-m);border-radius:6px;background:var(--indigo-l);cursor:pointer;font-size:11px;color:var(--indigo);font-family:inherit;font-weight:600;transition:all .15s}
+.tb-admin-btn:hover{background:var(--indigo);color:#fff}
+/* ── ADMIN MODAL ──────────────────────────────────── */
+/* ── ADMIN MODAL ─────────────────────────────────── */
+#admin-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center;padding:16px}
+#admin-modal.open{display:flex}
+.amc{background:#fff;border-radius:16px;width:620px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 48px rgba(0,0,0,.2);overflow:hidden}
+.am-head{padding:20px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.am-head h3{font-size:16px;font-weight:800;color:var(--text)}
+.am-head-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.am-tabs{display:flex;gap:0;padding:0 24px;margin-top:16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.am-tab{padding:10px 18px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;font-family:inherit;transition:all .15s;margin-bottom:-1px}
+.am-tab.active{color:var(--indigo);border-bottom-color:var(--indigo)}
+.am-body{padding:20px 24px;overflow-y:auto;flex:1}
+/* user list */
+.u-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:border-color .15s}
+.u-row:hover{border-color:var(--border2)}
+.u-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.u-av.role-admin{background:#EEF2FF;color:#4F46E5}
+.u-av.role-editor{background:#FFFBEB;color:#D97706}
+.u-av.role-viewer{background:#ECFDF5;color:#059669}
+.u-info{flex:1;min-width:0}
+.u-name{font-size:13px;font-weight:600;color:var(--text)}
+.u-email{font-size:11px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-badges{display:flex;align-items:center;gap:6px;margin-top:0}
+.role-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0}
+.role-badge.admin{background:#EEF2FF;color:#4F46E5}
+.role-badge.editor{background:#FFFBEB;color:#D97706}
+.role-badge.viewer{background:#ECFDF5;color:#059669}
+.role-badge.you{background:var(--surface2);color:var(--muted)}
+.u-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.u-act-btn{border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text2);font-size:11px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:all .12s}
+.u-act-btn:hover{border-color:var(--border2)}
+.u-act-btn.danger{color:var(--red)}
+.u-act-btn.danger:hover{border-color:var(--red);background:var(--red-l)}
+/* add user form */
+.am-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.am-field label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.am-field input{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s;color:var(--text)}
+.am-field input:focus{border-color:var(--indigo)}
+.am-roles{display:flex;flex-direction:column;gap:8px}
+.am-role-opt{cursor:pointer;display:flex;align-items:flex-start;gap:0}
+.am-role-opt input[type=radio]{display:none}
+.am-role-card{border:1.5px solid var(--border);border-radius:9px;padding:10px 14px;width:100%;transition:all .15s;cursor:pointer}
+.am-role-opt input[type=radio]:checked + .am-role-card{border-color:var(--indigo);background:var(--indigo-l)}
+.am-role-card:hover{border-color:var(--border2)}
+.am-role-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
+.am-role-desc{font-size:11px;color:var(--muted);line-height:1.45}
+.am-add-btn{width:100%;padding:11px;background:var(--indigo);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;margin-top:4px}
+.am-add-btn:hover{background:#4338CA}
+.am-add-btn:disabled{opacity:.5;cursor:not-allowed}
+.am-err{color:var(--red);font-size:11px;display:none;margin-bottom:6px;padding:8px 10px;background:var(--red-l);border-radius:6px}
+.am-success{display:none;background:var(--green-l);border:1px solid var(--green-m);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--green);margin-top:8px;line-height:1.5}
+.am-footer{padding:12px 24px;border-top:1px solid var(--border);background:var(--surface2);flex-shrink:0}
+.am-rules-btn{border:none;background:none;color:var(--indigo);cursor:pointer;font-size:11px;padding:0;text-decoration:underline;font-family:inherit}
+.am-rules-box{display:none;margin-top:8px;background:#1e1e2e;border-radius:8px;padding:12px;font-size:10px;color:#a6e3a1;font-family:monospace;line-height:1.6;white-space:pre;overflow-x:auto}
+.am-empty{text-align:center;padding:32px;color:var(--muted);font-size:13px}
+.u-select-role{border:1px solid var(--border);border-radius:6px;font-size:11px;padding:3px 6px;font-family:inherit;background:var(--surface);color:var(--text2);cursor:pointer;outline:none}
+
+/* ── COMPARE SELECT ──────────────────────────────── */
+.compare-sel{padding:6px 10px;border:1px solid var(--border2);border-radius:7px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text2);cursor:pointer;outline:none}
+.compare-sel:focus{border-color:var(--indigo)}
+.compare-wrap-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* ── VACCINE TAB ─────────────────────────────────── */
+#vaccine-view{display:none}
+#vaccine-view.show{display:block}
+.vacc-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.vacc-kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.vacc-kpi .vk-num{font-size:28px;font-weight:800;line-height:1}
+.vacc-kpi .vk-lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.vacc-list{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.vacc-list-head{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.vacc-row{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background .1s}
+.vacc-row:last-child{border-bottom:none}
+.vacc-row:hover{background:var(--surface2)}
+.vacc-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+.vacc-check.done{background:var(--green);border-color:var(--green);color:#fff}
+.vacc-check.miss{background:var(--red-l);border-color:var(--red)}
+.vacc-info{flex:1;min-width:0}
+.vacc-name{font-size:13px;font-weight:600;color:var(--text)}
+.vacc-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.vacc-note{font-size:10px;color:var(--indigo);margin-top:3px;font-style:italic;line-height:1.4}
+.vacc-date-input{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;color:var(--text2);background:var(--surface);outline:none;width:110px;flex-shrink:0}
+.vacc-date-input:focus{border-color:var(--indigo)}
+.vacc-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+.vacc-badge.done{background:var(--green-l);color:var(--green)}
+.vacc-badge.miss{background:var(--red-l);color:var(--red)}
+.vacc-badge.fut{background:var(--surface2);color:var(--muted)}
+.vacc-badge.rec{background:var(--amber-l);color:var(--amber)}
+.ann-pin{cursor:pointer;font-size:13px}
+.ann-add{cursor:pointer;font-size:13px;color:var(--muted2)}
+
+/* ── BIO AGE WIDGET ─────────────────────────────── */
+.bio-age-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
+.bio-age-ring{text-align:center;flex-shrink:0}
+.bio-age-ring .bar{font-size:40px;font-weight:900;line-height:1;letter-spacing:-2px}
+.bio-age-ring .lbl{font-size:11px;color:var(--muted);font-weight:500;margin-top:4px}
+.bio-age-factors{flex:1;min-width:240px}
+.bio-age-factors h3{font-size:13px;font-weight:700;margin-bottom:12px}
+.baf-row{display:flex;align-items:center;gap:8px;font-size:11px;margin-bottom:6px}
+.baf-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.baf-name{flex:1;color:var(--text2)}
+.baf-val{font-weight:600;min-width:50px;text-align:right}
+
+/* ── CORR SECTION ────────────────────────────────── */
+.corr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px}
+.corr-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;cursor:pointer;transition:all .15s}
+.corr-card:hover{border-color:var(--indigo-m);transform:translateY(-1px)}
+.corr-r{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.corr-names{font-size:11px;color:var(--text2);margin-top:4px}
+.corr-dir{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── NEXT EXAM SECTION ───────────────────────────── */
+.next-exam-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px;display:flex;gap:14px}
+.next-exam-icon{width:36px;height:36px;border-radius:8px;background:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.next-exam-body{flex:1}
+.next-exam-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.next-exam-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── PRINT ───────────────────────────────────────── */
+.tb-print-btn{padding:7px 12px;border-radius:7px;border:1px solid var(--border2);cursor:pointer;font-size:12px;font-weight:500;background:var(--surface);color:var(--text2);font-family:inherit}
+.tb-print-btn:hover{border-color:var(--indigo);color:var(--indigo)}
+@media print{
+  #sidebar,#topbar,.nav-tabs,.tb-btn,.tb-print-btn,.tb-user,.tb-admin-btn,#admin-btn,
+  #modal-overlay,#login-screen,#admin-modal,#compare-wrap,.bc-spark,
+  .alert-meta,.alert-rec .pill{display:none!important}
+  body{overflow:visible!important;height:auto!important}
+  #main{overflow:visible!important;height:auto!important}
+  #content{overflow:visible!important;padding:16px!important}
+  .cards-grid{grid-template-columns:repeat(4,1fr)!important}
+  canvas{max-height:none!important}
+  @page{margin:1.5cm}
+}
+
+/* ── MOBILE HAMBURGER BUTTON ─────────────────────── */
+#mobile-menu-btn{display:none;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid var(--border);border-radius:7px;background:var(--surface);cursor:pointer;font-size:18px;flex-shrink:0;color:var(--text2)}
+
+/* ── SIDEBAR OVERLAY (mobile) ────────────────────── */
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:199;-webkit-tap-highlight-color:transparent}
+#sidebar-overlay.show{display:block}
+
+/* ── MOBILE RESPONSIVE ───────────────────────────── */
+@media (max-width:768px){
+  /* Layout */
+  body{flex-direction:column}
+  #mobile-menu-btn{display:flex}
+
+  /* Sidebar drawer */
+  #sidebar{
+    position:fixed;left:0;top:0;bottom:0;z-index:200;
+    width:280px;min-width:280px;
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+    box-shadow:4px 0 24px rgba(0,0,0,.12);
+    display:flex!important;
+  }
+  #sidebar.sb-open{transform:translateX(0)}
+
+  /* Topbar */
+  #topbar{height:auto;padding:10px 12px;gap:8px;flex-wrap:wrap}
+  .tb-info{min-width:0;flex:1}
+  .tb-info h1{font-size:14px}
+  .tb-info .tb-meta{display:none}
+
+  /* Nav tabs — full-width scrollable row below topbar info */
+  .nav-tabs{
+    order:10;width:100%;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .nav-tabs::-webkit-scrollbar{display:none}
+  .nav-tab{padding:5px 11px;font-size:11px;white-space:nowrap}
+
+  /* Hide non-essential topbar items */
+  #tb-email{display:none!important}
+  .tb-print-btn{display:none}
+  .tb-btn{font-size:11px;padding:6px 10px}
+
+  /* Content */
+  #content{padding:14px}
+
+  /* Grids → 2 cols */
+  .alerts-summary{grid-template-columns:repeat(2,1fr);gap:8px}
+  .vacc-summary{grid-template-columns:repeat(2,1fr);gap:8px}
+  .score-bars{grid-template-columns:1fr 1fr}
+  .sys-grid{grid-template-columns:1fr}
+
+  /* Diag score card → column */
+  .diag-score-card{flex-direction:column;align-items:flex-start;gap:16px;padding:18px}
+
+  /* Bio age card → column */
+  .bio-age-card{flex-direction:column;gap:16px}
+  .bio-age-factors{min-width:0}
+
+  /* Timeline — hide left date column */
+  .tl-wrapper{padding-left:0}
+  .tl-date-col{display:none}
+  .tl-item::before{left:5px}
+  .tl-node{left:-1px}
+
+  /* Modals full width */
+  .modal{width:calc(100vw - 24px);max-width:none}
+  .amc{width:calc(100vw - 24px);max-width:none;max-height:92vh}
+
+  /* Chart */
+  canvas{max-height:220px}
+
+  /* Vaccine rows */
+  .vacc-row{flex-wrap:wrap;gap:8px}
+  .vacc-date-input{width:100%}
+}
+
+@media (max-width:480px){
+  .cards-grid{grid-template-columns:repeat(2,1fr)}
+  .corr-grid{grid-template-columns:1fr}
+  .score-bars{grid-template-columns:1fr}
+  .cv-header{flex-direction:column;gap:10px}
+  .cv-stats{width:100%}
+  .cv-stat{flex:1;min-width:0;padding:8px}
+  .cv-stat .sv{font-size:16px}
+  .bio-age-ring .bar{font-size:32px}
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#data-loading{position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#data-loading .dl-spinner{width:36px;height:36px;border:3px solid var(--indigo-m);border-top-color:var(--indigo);border-radius:50%;animation:spin .8s linear infinite}
+#data-loading .dl-msg{font-size:13px;color:var(--muted);font-family:'Inter',-apple-system,sans-serif}
+#sync-dot{position:fixed;bottom:14px;right:14px;background:var(--green);width:8px;height:8px;border-radius:50%;z-index:4000;display:none;box-shadow:0 0 6px var(--green)}
+#sync-dot.saving{background:var(--amber);animation:spin 1s linear infinite}
 </style>
 </head>
 <body>
 
-<!-- AUTH WALL -->
-<div id="auth-wall">
-  <div class="auth-card">
-    <div class="auth-logo">🫀</div>
-    <div class="auth-title">Dashboard de Longevidade</div>
-    <div class="auth-sub">Marcos Paulo · Acesso restrito</div>
-    <label class="auth-label">Senha de acesso</label>
-    <input class="auth-input" type="password" id="auth-input" placeholder="Digite a senha..." onkeydown="if(event.key==='Enter')checkAuth()">
-    <button class="auth-btn" onclick="checkAuth()">Entrar</button>
-    <div class="auth-error" id="auth-error">Senha incorreta. Tente novamente.</div>
+<!-- DATA LOADING OVERLAY -->
+<div id="data-loading" style="display:none">
+  <div class="dl-spinner"></div>
+  <div class="dl-msg" id="dl-msg">Carregando seus dados de saúde...</div>
+</div>
+<!-- SYNC STATUS DOT -->
+<div id="sync-dot" title="Sincronizando..."></div>
+
+<!-- ADMIN MODAL -->
+<div id="admin-modal">
+  <div class="amc">
+    <div class="am-head">
+      <div>
+        <h3>👥 Gerenciamento de Acesso</h3>
+        <div class="am-head-sub">Controle quem pode acessar e editar este dashboard</div>
+      </div>
+      <button class="modal-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="am-tabs">
+      <button class="am-tab active" onclick="switchAmTab('users',this)">Usuários com acesso</button>
+      <button class="am-tab" onclick="switchAmTab('add',this)">+ Adicionar usuário</button>
+    </div>
+    <div class="am-body">
+      <!-- Users tab -->
+      <div id="am-tab-users">
+        <div id="am-users-list"><div class="am-empty">Carregando...</div></div>
+      </div>
+      <!-- Add user tab -->
+      <div id="am-tab-add" style="display:none">
+        <div class="am-field">
+          <label>Nome completo</label>
+          <input type="text" id="am-name" placeholder="Dr. Nome Sobrenome">
+        </div>
+        <div class="am-field">
+          <label>Email</label>
+          <input type="email" id="am-email" placeholder="email@clinica.com.br">
+        </div>
+        <div class="am-field">
+          <label>Nível de acesso</label>
+          <div class="am-roles">
+            <label class="am-role-opt">
+              <input type="radio" name="am-role" value="viewer" checked>
+              <div class="am-role-card">
+                <div class="am-role-name">👁️ Visualizador</div>
+                <div class="am-role-desc">Acesso de leitura a todos os exames, diagnósticos e histórico. Ideal para médicos acompanhantes.</div>
+              </div>
+            </label>
+            <label class="am-role-opt">
+              <input type="radio" name="am-role" value="editor">
+              <div class="am-role-card">
+                <div class="am-role-name">✏️ Editor</div>
+                <div class="am-role-desc">Tudo do Visualizador + pode adicionar anotações nos exames e atualizar o cartão de vacinas.</div>
+              </div>
+            </label>
+            <label class="am-role-opt">
+              <input type="radio" name="am-role" value="admin">
+              <div class="am-role-card">
+                <div class="am-role-name">⚙️ Administrador</div>
+                <div class="am-role-desc">Acesso total incluindo gerenciamento de usuários e configurações do dashboard.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="am-err" id="am-err"></div>
+        <button class="am-add-btn" id="am-submit-btn" onclick="addUser()">Criar conta e enviar convite por email →</button>
+        <div class="am-success" id="am-success"></div>
+      </div>
+    </div>
+    <div class="am-footer">
+      <div style="font-size:11px;color:var(--muted)">
+        ⚠️ Atualize as <button class="am-rules-btn" onclick="toggleRules()">regras do Firestore</button> e do <button class="am-rules-btn" onclick="toggleStorageRules()">Storage</button> para persistência completa
+      </div>
+      <div class="am-rules-box" id="am-storage-rules-box" style="display:none">// Firebase Storage Rules
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /pdfs/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.token.email == 'marcosinfoprodutor@gmail.com';
+    }
+  }
+}</div>
+      <div class="am-rules-box" id="am-rules-box">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'marcosinfoprodutor@gmail.com';
+    }
+    function canEdit() {
+      return isAdmin() || (
+        request.auth != null &&
+        get(/databases/$(database)/documents/allowed_users/$(request.auth.uid)).data.role in ['admin','editor']
+      );
+    }
+    match /allowed_users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isAdmin();
+    }
+    match /exams/{examId} {
+      allow read: if request.auth != null;
+      allow write: if canEdit();
+    }
+    match /config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if canEdit();
+    }
+  }
+}</div>
+    </div>
   </div>
 </div>
-<script>
-(function(){
-  const PASS = 'longevidade2025';
-  if(sessionStorage.getItem('auth_ok')==='1') document.getElementById('auth-wall').classList.add('hidden');
-  window.checkAuth = function(){
-    const v = document.getElementById('auth-input').value;
-    if(v === PASS){ sessionStorage.setItem('auth_ok','1'); document.getElementById('auth-wall').classList.add('hidden'); }
-    else{ const e=document.getElementById('auth-error'); e.style.display='block'; document.getElementById('auth-input').value=''; document.getElementById('auth-input').focus(); }
-  };
-})();
-</script>
 
-<!-- SIDEBAR -->
-<div id="sidebar">
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="lc">
+    <div class="lc-logo">
+      <div class="lc-logo-icon">🧬</div>
+      <div>
+        <div class="lc-logo-name">Longevidade MP</div>
+        <div class="lc-logo-sub">Dashboard de Saúde Privado</div>
+      </div>
+    </div>
+    <div class="lc-title">Bem-vindo</div>
+    <div class="lc-sub">Acesso restrito — apenas usuários autorizados</div>
+    <div class="lc-msg lc-err" id="lc-err"></div>
+    <div class="lc-msg lc-ok"  id="lc-ok"></div>
+    <div class="lc-field"><label>Email</label><input type="email" id="lc-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lc-field"><label>Senha</label><input type="password" id="lc-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="lc-btn" id="lc-btn" onclick="doLogin()">Entrar</button>
+    <div class="lc-forgot"><a onclick="doReset()">Esqueci minha senha</a></div>
+  </div>
+</div>
+
+<div id="sidebar" style="display:none">
   <div class="sb-brand">
     <div class="logo">
       <div class="logo-icon">L</div>
@@ -285,11 +646,17 @@ canvas{max-height:340px}
     </div>
   </div>
   <div class="sb-cats" id="sb-cats"></div>
+  <div id="sb-admin-section" style="display:none;padding:8px;border-top:1px solid var(--border)">
+    <button id="admin-btn" class="tb-admin-btn" onclick="openAdmin()" style="width:100%;justify-content:flex-start;display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:7px">
+      👥 <span>Gerenciar acesso</span>
+    </button>
+  </div>
 </div>
 
 <!-- MAIN -->
-<div id="main">
+<div id="main" style="display:none">
   <div id="topbar">
+    <button id="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">☰</button>
     <div class="tb-info">
       <h1 id="topbar-title">Visão Geral</h1>
       <div class="tb-meta" id="topbar-meta"></div>
@@ -298,9 +665,18 @@ canvas{max-height:340px}
       <button class="nav-tab active" onclick="switchTab('overview',this)">Visão Geral</button>
       <button class="nav-tab" onclick="switchTab('diag',this)">Diagnóstico</button>
       <button class="nav-tab" onclick="switchTab('alerts',this)">Alertas</button>
+      <button class="nav-tab" onclick="switchTab('vaccine',this)">💉 Vacinas</button>
       <button class="nav-tab" onclick="switchTab('timeline',this)">Linha do Tempo</button>
     </nav>
-    <button class="tb-btn" onclick="openModal()">↑ Importar PDF</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="tb-print-btn" onclick="window.print()" title="Exportar/Imprimir">🖨 PDF</button>
+      <button class="tb-btn" onclick="openModal()">↑ Importar PDF</button>
+      <div class="tb-user">
+        <div class="tb-user-avatar" id="tb-avatar">?</div>
+        <span id="tb-email" style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button class="tb-logout" onclick="doLogout()">Sair</button>
+      </div>
+    </div>
   </div>
 
   <div id="content">
@@ -314,6 +690,7 @@ canvas{max-height:340px}
           <div class="cv-title" id="cv-title">—</div>
           <div class="cv-sub" id="cv-sub"></div>
         </div>
+        <div id="compare-wrap" class="compare-wrap-row"></div>
         <div class="cv-stats" id="cv-stats"></div>
       </div>
       <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
@@ -328,6 +705,8 @@ canvas{max-height:340px}
 
     <!-- TIMELINE -->
     <div id="timeline-view"></div>
+    <!-- VACINAS -->
+    <div id="vaccine-view"></div>
   </div>
 </div>
 
@@ -354,6 +733,317 @@ canvas{max-height:340px}
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════
+// FIREBASE AUTH & ADMIN
+// ═══════════════════════════════════════════════════════
+firebase.initializeApp({
+  apiKey:"AIzaSyBwqg8f9-fo9iQK18zfpBcq7SYi029LZvA",
+  authDomain:"longevidade-mp.firebaseapp.com",
+  projectId:"longevidade-mp",
+  storageBucket:"longevidade-mp.firebasestorage.app",
+  messagingSenderId:"587700286166",
+  appId:"1:587700286166:web:451d0671ec7de0c6b5cf77"
+});
+const auth    = firebase.auth();
+const db      = firebase.firestore();
+const storage = firebase.storage();
+const ADMIN_EMAIL = 'marcosinfoprodutor@gmail.com';
+// Emails autorizados diretamente (médicos e acompanhantes)
+const ALLOWED_EMAILS = [
+  'marcosinfoprodutor@gmail.com',  // Admin — Marcos Paulo
+  'ycarocouto@gmail.com',          // Dr. Ycaro Couto
+];
+let currentUser = null;
+let isAdmin = false;
+let currentUserRole = 'viewer'; // 'admin' | 'editor' | 'viewer'
+let dashInited = false;
+
+auth.onAuthStateChanged(async user => {
+  if (user) {
+    const allowed = ALLOWED_EMAILS.includes(user.email) || await checkAllowed(user.uid);
+    if (!allowed) {
+      await auth.signOut();
+      lcErr('Acesso não autorizado. Solicite permissão ao administrador.');
+      return;
+    }
+    currentUser = user;
+    isAdmin = user.email === ADMIN_EMAIL;
+    currentUserRole = isAdmin ? 'admin' : 'viewer';
+    // Try to fetch role from Firestore
+    try {
+      const rdoc = await db.collection('allowed_users').doc(user.uid).get();
+      if(rdoc.exists) currentUserRole = rdoc.data().role || 'viewer';
+    } catch(e){}
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('sidebar').style.display = '';
+    document.getElementById('main').style.display = '';
+    const init2 = (document.getElementById('main').style.display === '');
+    const av = document.getElementById('tb-avatar');
+    if(av) av.textContent = user.email[0].toUpperCase();
+    const em = document.getElementById('tb-email');
+    if(em) em.textContent = user.email;
+    const adminSection = document.getElementById('sb-admin-section');
+    if(adminSection) adminSection.style.display = isAdmin ? '' : 'none';
+    if (!dashInited) {
+      dashInited = true;
+      document.getElementById('data-loading').style.display = 'flex';
+      document.getElementById('dl-msg').textContent = 'Carregando seus dados de saúde...';
+      try {
+        await loadAllData();
+      } catch(e) {
+        console.error('Firestore load failed:', e);
+        TL = buildTimeline(RAW_EXAMS);
+        // Show visible error to admin
+        if (isAdmin) {
+          document.getElementById('dl-msg').textContent = '⚠️ Erro ao conectar ao Firebase: ' + (e.code || e.message || e);
+          document.getElementById('dl-msg').style.color = '#ef4444';
+          await new Promise(r => setTimeout(r, 4000));
+          document.getElementById('dl-msg').style.color = '';
+        }
+      }
+      document.getElementById('data-loading').style.display = 'none';
+      init();
+    }
+  } else {
+    currentUser = null; isAdmin = false;
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('sidebar').style.display = 'none';
+    document.getElementById('main').style.display = 'none';
+  }
+});
+
+async function checkAllowed(uid) {
+  try {
+    const d = await db.collection('allowed_users').doc(uid).get();
+    return d.exists;
+  } catch(e) { return false; }
+}
+
+function lcErr(msg) {
+  const e=document.getElementById('lc-err'); e.textContent=msg; e.style.display='block';
+  document.getElementById('lc-ok').style.display='none';
+}
+function lcOk(msg) {
+  const e=document.getElementById('lc-ok'); e.textContent=msg; e.style.display='block';
+  document.getElementById('lc-err').style.display='none';
+}
+
+/* ── MOBILE SIDEBAR ─────────────────────────────── */
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if(sb.classList.contains('sb-open')) { closeSidebar(); }
+  else { sb.classList.add('sb-open'); ov.classList.add('show'); }
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('sb-open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+async function doLogin() {
+  const email=document.getElementById('lc-email').value.trim();
+  const pass=document.getElementById('lc-pass').value;
+  const btn=document.getElementById('lc-btn');
+  if(!email||!pass){lcErr('Preencha email e senha.');return;}
+  btn.disabled=true; btn.textContent='Entrando...';
+  document.getElementById('lc-err').style.display='none';
+  document.getElementById('lc-ok').style.display='none';
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    const m={'auth/user-not-found':'Email não encontrado.','auth/wrong-password':'Senha incorreta.',
+      'auth/invalid-credential':'Email ou senha incorretos.','auth/invalid-email':'Email inválido.',
+      'auth/too-many-requests':'Muitas tentativas. Aguarde alguns minutos e tente novamente.'};
+    lcErr(m[e.code]||'Erro: '+e.message);
+    btn.disabled=false; btn.textContent='Entrar';
+  }
+}
+
+async function doReset() {
+  const email=document.getElementById('lc-email').value.trim();
+  if(!email){lcErr('Digite seu email para recuperar a senha.');return;}
+  try {
+    await auth.sendPasswordResetEmail(email);
+    lcOk('Email de recuperação enviado para '+email+'. Verifique sua caixa de entrada (e spam).');
+  } catch(e) { lcErr('Erro: '+e.message); }
+}
+
+function doLogout() { if(confirm('Sair do dashboard?')) auth.signOut(); }
+
+function openAdmin() {
+  document.getElementById('admin-modal').classList.add('open');
+  switchAmTab('users', document.querySelector('.am-tab'));
+}
+function closeAdmin() { document.getElementById('admin-modal').classList.remove('open'); }
+
+function switchAmTab(tab, btn) {
+  document.querySelectorAll('.am-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('am-tab-users').style.display = tab==='users'?'':'none';
+  document.getElementById('am-tab-add').style.display   = tab==='add'?'':'none';
+  if(tab==='users') loadUsers();
+  if(tab==='add') { document.getElementById('am-err').style.display='none'; document.getElementById('am-success').style.display='none'; }
+}
+
+function toggleStorageRules(){
+  const b=document.getElementById('am-storage-rules-box');
+  b.style.display=b.style.display==='none'?'block':'none';
+}
+
+function toggleRules() {
+  const box = document.getElementById('am-rules-box');
+  box.style.display = box.style.display==='block'?'none':'block';
+}
+
+const ROLE_LABELS = {admin:'Administrador', editor:'Editor', viewer:'Visualizador'};
+const ROLE_CLASS  = {admin:'admin', editor:'editor', viewer:'viewer'};
+
+async function loadUsers() {
+  const list = document.getElementById('am-users-list');
+  list.innerHTML = '<div class="am-empty">Carregando...</div>';
+
+  // Build user map: hardcoded + Firestore
+  const users = [];
+
+  // Hardcoded admin always shown
+  users.push({uid:'__admin__', email:ADMIN_EMAIL, name:'Marcos Paulo (você)', role:'admin', fixed:true});
+
+  // Other ALLOWED_EMAILS (skip admin)
+  const knownEmails = new Set([ADMIN_EMAIL]);
+
+  // Load from Firestore
+  let firestoreOk = false;
+  try {
+    const snap = await db.collection('allowed_users').get();
+    snap.forEach(doc => {
+      const u = doc.data();
+      if(!knownEmails.has(u.email)) {
+        users.push({uid:doc.id, email:u.email, name:u.name||u.email, role:u.role||'viewer', fixed:false});
+        knownEmails.add(u.email);
+      }
+    });
+    firestoreOk = true;
+  } catch(e) { /* rules not updated yet */ }
+
+  // Add hardcoded ALLOWED_EMAILS not yet in Firestore
+  ALLOWED_EMAILS.forEach(em => {
+    if(!knownEmails.has(em)) {
+      users.push({uid:'__email__'+em, email:em, name:em, role:'viewer', fixed:true, fromCode:true});
+      knownEmails.add(em);
+    }
+  });
+
+  if(users.length===0){ list.innerHTML='<div class="am-empty">Nenhum usuário com acesso.</div>'; return; }
+
+  let html = '';
+  users.forEach(u => {
+    const initial = (u.name||u.email||'?')[0].toUpperCase();
+    const roleCls = ROLE_CLASS[u.role]||'viewer';
+    const roleLabel = ROLE_LABELS[u.role]||'Visualizador';
+    const isMe = u.email === currentUser?.email;
+    html += `<div class="u-row">
+      <div class="u-av role-${roleCls}">${initial}</div>
+      <div class="u-info">
+        <div class="u-name">${u.name||u.email}</div>
+        <div class="u-email">${u.name!==u.email?u.email:''}</div>
+      </div>
+      <div class="u-badges">
+        ${isMe ? '<span class="role-badge you">Você</span>' : ''}
+        ${u.fromCode ? '<span class="role-badge you" title="Definido no código">Fixo</span>' : ''}
+        ${firestoreOk&&!u.fixed ? `<select class="u-select-role" onchange="updateRole('${u.uid}',this.value)">
+          <option value="viewer"${u.role==='viewer'?' selected':''}>👁️ Visualizador</option>
+          <option value="editor"${u.role==='editor'?' selected':''}>✏️ Editor</option>
+          <option value="admin"${u.role==='admin'?' selected':''}>⚙️ Admin</option>
+        </select>` : `<span class="role-badge ${roleCls}">${roleLabel}</span>`}
+      </div>
+      <div class="u-actions">
+        ${!isMe ? `<button class="u-act-btn" onclick="resendInvite('${u.email}',this)" title="Reenviar email de acesso">↺ Reenviar</button>` : ''}
+        ${!isMe&&!u.fixed ? `<button class="u-act-btn danger" onclick="removeUser('${u.uid}','${u.email}')">Remover</button>` : ''}
+      </div>
+    </div>`;
+  });
+
+  if(!firestoreOk) html += `<div style="margin-top:12px;padding:10px 12px;background:var(--amber-l);border:1px solid var(--amber-m);border-radius:8px;font-size:11px;color:var(--amber)">
+    ⚠️ Atualize as regras do Firestore (ver abaixo) para salvar e gerenciar usuários dinamicamente.
+  </div>`;
+
+  list.innerHTML = html;
+}
+
+async function addUser() {
+  const name  = document.getElementById('am-name').value.trim();
+  const email = document.getElementById('am-email').value.trim();
+  const role  = document.querySelector('input[name="am-role"]:checked')?.value || 'viewer';
+  const err   = document.getElementById('am-err');
+  const succ  = document.getElementById('am-success');
+  const btn   = document.getElementById('am-submit-btn');
+  err.style.display='none'; succ.style.display='none';
+
+  if(!email){err.textContent='Digite o email do usuário.';err.style.display='block';return;}
+  if(!name) {err.textContent='Digite o nome do usuário.';err.style.display='block';return;}
+
+  btn.disabled=true; btn.textContent='Criando conta...';
+  try {
+    // Generate a random temp password — user will reset via email
+    const tempPass = 'Tmp_' + Math.random().toString(36).slice(2,10) + '!9';
+    const sec = firebase.initializeApp(firebase.app().options, 'sec_'+Date.now());
+    const cred = await sec.auth().createUserWithEmailAndPassword(email, tempPass);
+    const uid = cred.user.uid;
+    await sec.auth().signOut(); await sec.delete();
+
+    // Save to Firestore (works if rules allow admin write)
+    try {
+      await db.collection('allowed_users').doc(uid).set({
+        email, name, role, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(fe) { /* rules not updated yet — user will still get invite */ }
+
+    // Send password-reset email as invite
+    await auth.sendPasswordResetEmail(email);
+
+    document.getElementById('am-name').value='';
+    document.getElementById('am-email').value='';
+    succ.innerHTML = `✓ Convite enviado para <strong>${email}</strong>!<br>O usuário receberá um email para definir a senha e acessar o dashboard.`;
+    succ.style.display='block';
+  } catch(e) {
+    const msgs = {'auth/email-already-in-use':'Este email já tem uma conta — envie o link de redefinição de senha para o usuário.',
+      'auth/invalid-email':'Email inválido.','auth/weak-password':'Senha muito fraca.'};
+    err.textContent = msgs[e.code]||e.message; err.style.display='block';
+  } finally {
+    btn.disabled=false; btn.textContent='Criar conta e enviar convite por email →';
+  }
+}
+
+async function updateRole(uid, newRole) {
+  try {
+    await db.collection('allowed_users').doc(uid).update({role: newRole});
+  } catch(e) { alert('Erro ao atualizar função: '+e.message); }
+}
+
+async function removeUser(uid, email) {
+  if(!confirm(`Remover acesso de ${email}?\n\nO usuário não poderá mais fazer login.`)) return;
+  try {
+    await db.collection('allowed_users').doc(uid).delete();
+    loadUsers();
+  } catch(e) { alert('Erro ao remover: '+e.message); }
+}
+
+async function resendInvite(email, btn) {
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    await auth.sendPasswordResetEmail(email);
+    btn.textContent = '✓ Enviado!';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(() => { btn.textContent=orig; btn.style.color=''; btn.style.borderColor=''; btn.disabled=false; }, 3000);
+  } catch(e) {
+    btn.textContent = 'Erro';
+    btn.style.color = 'var(--red)';
+    setTimeout(() => { btn.textContent=orig; btn.style.color=''; btn.disabled=false; }, 3000);
+  }
+}
+
 // ═══════════════════════════════════════════════════════
 // BIOMARKER DEFINITIONS
 // ═══════════════════════════════════════════════════════
@@ -495,7 +1185,7 @@ function buildTimeline(rawExams) {
   }
   return Object.values(map).sort((a,b)=>a.date.localeCompare(b.date));
 }
-const TL = buildTimeline(RAW_EXAMS);
+let TL = [];
 
 function series(id) {
   return TL.filter(t=>t.markers[id]!=null).map(t=>({date:t.date,v:t.markers[id],src:t.sources.join('/')}));
@@ -566,27 +1256,55 @@ function renderOverview() {
       const cnt=series(id).length;
       const tr=trend(id);
       const refTxt=d.rMax&&d.rMax<9999?`${d.rMin??0}–${d.rMax} ${d.unit}`:d.oMin?`Ideal: ${d.oMin}–${d.oMax}`:d.unit;
+      const sparkId='spark-'+id;
       html+=`<div class="bio-card s-${st}" onclick="showChart('${id}')">
-        <div class="bc-unit">${d.unit}</div>
-        <div class="bc-name">${d.name}</div>
-        <div class="bc-val s-${st}">${fmt(l.v)}</div>
+        <div class="bc-header">
+          <div class="bc-name">${d.name}</div>
+          <div class="bc-unit">${d.unit}</div>
+        </div>
+        <div class="bc-val s-${st}">${fmt(l.v)} <span class="bc-trend-icon">${tr==='↑'?'↑':tr==='↓'?'↓':'→'}</span></div>
+        <div class="bc-spark"><canvas id="${sparkId}" width="120" height="32"></canvas></div>
         <div class="bc-footer">
-          <span class="bc-trend">${tr==='↑'?'↑':tr==='↓'?'↓':'→'}</span>
-          <span class="bc-count">${cnt} medição${cnt>1?'ões':''}</span>
+          <span class="pill pill-${st==='green'?'green':st==='red'?'red':'amber'}">${st==='green'?'Ótimo':st==='red'?'Crítico':'Atenção'}</span>
+          <span class="bc-count">${cnt} medições</span>
         </div>
       </div>`;
     }
     html+='</div>';
   }
   document.getElementById('overview-view').innerHTML=html;
+  // Destroy old sparklines
+  Object.values(sparkCharts).forEach(c=>c.destroy());
+  sparkCharts={};
+  // Render sparklines
+  for(const [id,d] of Object.entries(DEFS)){
+    const s=series(id); if(s.length<2) continue;
+    const canvas=document.getElementById('spark-'+id); if(!canvas) continue;
+    const vals=s.slice(-8).map(p=>p.v);
+    const st=status(id,vals[vals.length-1]);
+    const col=st==='green'?'#059669':st==='red'?'#DC2626':'#D97706';
+    sparkCharts[id]=new Chart(canvas,{
+      type:'line',
+      data:{labels:vals.map((_,i)=>i),datasets:[{data:vals,borderColor:col,borderWidth:1.5,
+        pointRadius:0,tension:0.4,fill:false}]},
+      options:{responsive:false,animation:false,plugins:{legend:{display:false},tooltip:{enabled:false}},
+        scales:{x:{display:false},y:{display:false}}}
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════
 // CHART
 // ═══════════════════════════════════════════════════════
 let chartInst = null;
+let sparkCharts = {};
+let compareId = null;
+const BIRTH_YEAR = 1997; // 30/04/1997
+const CHRON_AGE = 28;
+
 
 function showChart(id) {
+  closeSidebar(); // close drawer on mobile when selecting a marker
   const d=DEFS[id]; const s=series(id);
   // highlight sidebar
   document.querySelectorAll('.mk-btn').forEach(b=>b.classList.remove('active'));
@@ -624,46 +1342,91 @@ function showChart(id) {
     <div class="cv-stat"><div class="sv">${fmt(minV)}</div><div class="sl">Mínimo</div></div>
     <div class="cv-stat"><div class="sv">${fmt(maxV)}</div><div class="sl">Máximo</div></div>
   `;
+  // Compare dropdown
+  const compareOpts=Object.entries(DEFS).filter(([k])=>k!==id&&series(k).length>1)
+    .map(([k,v])=>`<option value="${k}" ${compareId===k?'selected':''}>${v.name}</option>`).join('');
+  document.getElementById('compare-wrap').innerHTML=
+    `<select class="compare-sel" onchange="setCompare('${id}',this.value)">
+      <option value="">＋ Comparar com...</option>${compareOpts}
+    </select>`;
 
-  // Chart
+  // Chart with reference bands
   if(chartInst){chartInst.destroy();chartInst=null;}
   document.getElementById('chart-view').querySelector('.chart-wrap').innerHTML='<canvas id="main-chart"></canvas>';
   const ptColors=s.map(p=>{const st2=status(id,p.v);return st2==='green'?'#059669':st2==='red'?'#DC2626':'#D97706';});
 
+  // Reference band plugin
+  const refBandPlugin={id:'refBands',beforeDraw(chart){
+    const {ctx,chartArea:{top,bottom,left,right},scales:{y}}=chart;
+    if(!y) return;
+    const drawBand=(yMin,yMax,color)=>{
+      if(yMin==null||yMax==null) return;
+      const yTop=Math.max(top,y.getPixelForValue(yMax));
+      const yBot=Math.min(bottom,y.getPixelForValue(yMin));
+      if(yBot<=yTop) return;
+      ctx.save(); ctx.fillStyle=color;
+      ctx.fillRect(left,yTop,right-left,yBot-yTop); ctx.restore();
+    };
+    // Red zones (outside lab ref)
+    if(d.rMin!=null) drawBand(0,d.rMin,'rgba(220,38,38,0.06)');
+    if(d.rMax!=null&&d.rMax<9999) drawBand(d.rMax,d.rMax*2,'rgba(220,38,38,0.06)');
+    // Green zone (optimal)
+    if(d.oMin!=null&&d.oMax!=null) drawBand(d.oMin,d.oMax,'rgba(5,150,105,0.08)');
+    // Amber zone (lab ref but not optimal)
+    if(d.rMin!=null&&d.oMin!=null&&d.oMin>d.rMin) drawBand(d.rMin,d.oMin,'rgba(217,119,6,0.06)');
+    if(d.rMax!=null&&d.oMax!=null&&d.oMax<d.rMax&&d.rMax<9999) drawBand(d.oMax,d.rMax,'rgba(217,119,6,0.06)');
+  }};
+
+  // Datasets: primary + optional compare
+  const datasets=[{
+    label:d.name, data:vals, yAxisID:'y',
+    borderColor:'#4F46E5', backgroundColor:'rgba(79,70,229,.06)',
+    pointBackgroundColor:ptColors, pointBorderColor:'#fff',
+    pointBorderWidth:2, pointRadius:6, pointHoverRadius:9,
+    tension:0.4, fill:true, borderWidth:2
+  }];
+  const allScales={
+    x:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:11}}},
+    y:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:11}},
+      afterDataLimits:sc=>{const pad=(sc.max-sc.min)*.18||.5;sc.min=Math.max(0,sc.min-pad);sc.max+=pad;}}
+  };
+  if(compareId&&compareId!==id){
+    const cDef=DEFS[compareId]; const cSeries=series(compareId);
+    if(cSeries.length>0){
+      const cVals=s.map(p=>{const cp=cSeries.find(c=>c.date===p.date);return cp?cp.v:null;});
+      datasets.push({label:cDef.name,data:cVals,yAxisID:'y2',
+        borderColor:'#D97706',backgroundColor:'transparent',
+        borderDash:[5,3],pointBackgroundColor:'#D97706',pointBorderColor:'#fff',
+        pointBorderWidth:2,pointRadius:5,tension:0.4,fill:false,borderWidth:2});
+      allScales.y2={position:'right',grid:{display:false},ticks:{color:'#D97706',font:{size:11}},
+        title:{display:true,text:cDef.unit,color:'#D97706',font:{size:10}}};
+    }
+  }
+
   chartInst=new Chart(document.getElementById('main-chart'),{
-    type:'line',
-    data:{
-      labels:s.map(p=>p.date.substring(0,7)),
-      datasets:[{
-        label:d.name, data:vals,
-        borderColor:'#4F46E5', backgroundColor:'rgba(79,70,229,.06)',
-        pointBackgroundColor:ptColors, pointBorderColor:'#fff',
-        pointBorderWidth:2, pointRadius:6, pointHoverRadius:9,
-        tension:0.4, fill:true, borderWidth:2
-      }]
-    },
+    type:'line', data:{labels:s.map(p=>p.date.substring(0,7)),datasets},
+    plugins:[refBandPlugin],
     options:{
       responsive:true, maintainAspectRatio:true, animation:{duration:350},
       plugins:{
-        legend:{display:false},
+        legend:{display:compareId?true:false,position:'top',labels:{boxWidth:12,font:{size:11}}},
         tooltip:{
           backgroundColor:'#fff', borderColor:'#E5E8EF', borderWidth:1,
           titleColor:'#111827', bodyColor:'#6B7280', padding:10,
           titleFont:{size:12,weight:'600'}, bodyFont:{size:12},
           callbacks:{
             title:ctx=>s[ctx[0].dataIndex].date,
-            label:ctx=>`${fmt(ctx.parsed.y)} ${d.unit}`,
-            afterLabel:ctx=>{const st2=status(id,ctx.parsed.y);return st2==='green'?'✓ Dentro do ideal':st2==='red'?'⚠ Fora da referência':'△ Atenção';}
+            label:ctx=>`${ctx.dataset.label}: ${fmt(ctx.parsed.y)} ${ctx.datasetIndex===0?d.unit:(DEFS[compareId]?.unit||'')}`,
+            afterLabel:ctx=>{if(ctx.datasetIndex!==0)return '';const st2=status(id,ctx.parsed.y);return st2==='green'?'✓ Dentro do ideal':st2==='red'?'⚠ Fora da referência':'△ Atenção';}
           }
         }
       },
-      scales:{
-        x:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:11}}},
-        y:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:11}},
-          afterDataLimits:sc=>{const pad=(sc.max-sc.min)*.18||.5;sc.min=Math.max(0,sc.min-pad);sc.max+=pad;}}
-      }
+      scales:allScales
     }
   });
+
+  // Annotation markers from localStorage
+  renderAnnotationMarkers(id, s);
 
   // History table
   let th=`<div class="history-table"><table>
@@ -961,6 +1724,21 @@ function renderAlerts() {
   html+=renderRecSection('Oportunidades de Otimização',warnRecs,'pill-amber','Otimizar');
   html+=renderRecSection('Pontos Positivos — Manter',goodRecs,'pill-green','Ótimo');
 
+  // Next exam recommendations
+  const nextRecs = computeNextExamRecs();
+  html += '<div class="alert-section">';
+  html += '<div class="alert-section-title"><span></span> Sugestões para a Próxima Coleta <span></span></div>';
+  for(const r of nextRecs) {
+    html += `<div class="next-exam-card">
+      <div class="next-exam-icon">${r.icon}</div>
+      <div class="next-exam-body">
+        <div class="next-exam-title">${r.title}</div>
+        <div class="next-exam-desc">${r.desc}</div>
+      </div>
+    </div>`;
+  }
+  html += '</div>';
+
   document.getElementById('alerts-view').innerHTML=html;
 }
 
@@ -1213,7 +1991,132 @@ function renderDiag() {
   }
   html += '</div></div>';
 
+  // Score evolution chart
+  html += '<div class="section-head" style="margin-top:24px">📈 Evolução do Score de Longevidade</div>';
+  html += '<div class="chart-wrap" style="padding:16px 20px"><canvas id="score-evo-chart" style="max-height:200px"></canvas></div>';
+
+  // Biological age widget
+  const {bioAge, offset, factors} = calcBioAge();
+  const bioColor = offset<0?'var(--green)':offset<=3?'var(--amber)':'var(--red)';
+  const bioLabel = offset<0?'Mais jovem biologicamente':'Mais velho biologicamente';
+  html += '<div class="section-head" style="margin-top:4px">🧬 Idade Biológica Estimada</div>';
+  html += `<div class="bio-age-card">
+    <div class="bio-age-ring">
+      <div class="bar" style="color:${bioColor}">${bioAge}</div>
+      <div class="lbl">anos biológicos</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted)">Crono: ${CHRON_AGE} anos</div>
+      <div style="font-size:11px;font-weight:600;color:${bioColor};margin-top:4px">${offset>=0?'+':''}${offset} anos</div>
+    </div>
+    <div class="bio-age-factors">
+      <h3>${bioLabel}</h3>
+      ${factors.map(f=>`<div class="baf-row">
+        <div class="baf-dot" style="background:${f.bad?'var(--red)':'var(--green)'}"></div>
+        <div class="baf-name">${f.name}: ${fmt(f.val)} ${f.unit}</div>
+        <div class="baf-val" style="color:${f.bad?'var(--red)':'var(--green)'}">${f.delta>=0?'+':''}${f.delta} anos</div>
+      </div>`).join('')}
+      <div style="margin-top:10px;font-size:11px;color:var(--muted);background:var(--surface2);border-radius:6px;padding:8px 10px">
+        ⚠️ Estimativa educacional baseada em marcadores mensuráveis. Não substitui avaliação médica clínica.
+      </div>
+    </div>
+  </div>`;
+
+  // Correlations
+  const corrs = computeCorrelations();
+  if(corrs.length) {
+    html += '<div class="section-head" style="margin-top:4px">🔗 Padrões de Correlação</div>';
+    html += '<div class="corr-grid">';
+    for(const c of corrs) {
+      const da=DEFS[c.a], db=DEFS[c.b];
+      const col=Math.abs(c.r)>0.8?'var(--red)':Math.abs(c.r)>0.65?'var(--amber)':'var(--indigo)';
+      const dir=c.r>0?'Correlação positiva — sobem juntos':'Correlação negativa — se opõem';
+      html+=`<div class="corr-card" onclick="showChart('${c.a}')">
+        <div class="corr-r" style="color:${col}">${c.r>0?'+':''}${c.r}</div>
+        <div class="corr-names">${da.name} × ${db.name}</div>
+        <div class="corr-dir">${dir} · ${c.n} pontos</div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  html += '</div>';
+
   document.getElementById('diag-view').innerHTML = html;
+
+  // Render score evolution chart after DOM update
+  requestAnimationFrame(() => {
+    const sh = buildScoreHistory();
+    const sCanvas = document.getElementById('score-evo-chart');
+    if(!sCanvas||sh.length<2) return;
+    new Chart(sCanvas, {
+      type:'line',
+      data:{
+        labels: sh.map(x=>x.date.substring(0,7)),
+        datasets:[{
+          label:'Score Longevidade %',
+          data: sh.map(x=>x.score),
+          borderColor:'#4F46E5', backgroundColor:'rgba(79,70,229,.08)',
+          pointBackgroundColor: sh.map(x=>x.score>=75?'#059669':x.score>=55?'#D97706':'#DC2626'),
+          pointBorderColor:'#fff', pointBorderWidth:2, pointRadius:6,
+          tension:0.35, fill:true, borderWidth:2
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:true, animation:{duration:400},
+        plugins:{legend:{display:false},tooltip:{
+          backgroundColor:'#fff',borderColor:'#E5E8EF',borderWidth:1,
+          titleColor:'#111827',bodyColor:'#6B7280',padding:10,
+          callbacks:{label:ctx=>`Score: ${ctx.parsed.y}% (${sh[ctx.dataIndex].n} biomarcadores)`}
+        }},
+        scales:{
+          x:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:11}}},
+          y:{min:0,max:100,grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:11},callback:v=>v+'%'}}
+        }
+      }
+    });
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════
+// COMPARE & ANNOTATIONS
+// ═══════════════════════════════════════════════════════
+function setCompare(baseId, cmpId) {
+  compareId = cmpId || null;
+  showChart(baseId);
+}
+
+function getAnnotations() {
+  try { return JSON.parse(localStorage.getItem('dash_annotations')||'{}'); } catch(e){return {};}
+}
+function saveAnnotation(markerId, date, text) {
+  const ann=getAnnotations();
+  if(!ann[markerId]) ann[markerId]={};
+  if(text) ann[markerId][date]=text; else delete ann[markerId][date];
+  localStorage.setItem('dash_annotations',JSON.stringify(ann));
+  // Persist to Firestore
+  showSync(true);
+  db.collection('config').doc('annotations').set({ data: ann })
+    .then(() => showSync(false)).catch(() => showSync(false));
+}
+function renderAnnotationMarkers(id, s) {
+  const ann=getAnnotations()[id]||{};
+  const rows=document.querySelectorAll('#history-table tbody tr');
+  rows.forEach((row,i)=>{
+    const ri=s.length-1-i; if(ri<0) return;
+    const date=s[ri].date;
+    const pin=ann[date]?`<span class="ann-pin" title="${ann[date]}" onclick="editAnnotation('${id}','${date}')">📌</span>`
+      :`<span class="ann-add" onclick="editAnnotation('${id}','${date}')">＋</span>`;
+    const td=row.cells[3]; if(td) td.innerHTML+=` ${pin}`;
+  });
+}
+function editAnnotation(markerId, date) {
+  const ann=getAnnotations()[markerId]||{};
+  const existing=ann[date]||'';
+  const text=prompt(`Anotação para ${date}:`, existing);
+  if(text===null) return;
+  saveAnnotation(markerId, date, text.trim());
+  const activeMarkerEl=document.querySelector('.mk-btn.active');
+  if(activeMarkerEl) showChart(markerId);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1241,9 +2144,10 @@ function switchTab(tab, btn) {
   document.getElementById('diag-view').className          = (tab==='diag')     ?'show':'';
   document.getElementById('alerts-view').className        = (tab==='alerts')   ?'show':'';
   document.getElementById('timeline-view').className      = (tab==='timeline') ?'show':'';
+  document.getElementById('vaccine-view').className       = (tab==='vaccine')  ?'show':'';
 
   // Render tab content + topbar
-  const titles={overview:'Visão Geral',diag:'Diagnóstico',alerts:'Alertas & Recomendações',timeline:'Linha do Tempo'};
+  const titles={overview:'Visão Geral',diag:'Diagnóstico',alerts:'Alertas & Recomendações',timeline:'Linha do Tempo',vaccine:'Cartão de Vacinação'};
   document.getElementById('topbar-title').textContent=titles[tab]||'';
   if(tab==='overview'){
     document.getElementById('topbar-meta').textContent=`${TL.length} coletas · ${Object.keys(DEFS).filter(id=>latest(id)!=null).length} biomarcadores · Último: ${TL[TL.length-1].date}`;
@@ -1253,6 +2157,7 @@ function switchTab(tab, btn) {
   if(tab==='diag'){renderDiag();}
   if(tab==='alerts'){renderAlerts();}
   if(tab==='timeline'){renderTimeline();}
+  if(tab==='vaccine'){renderVaccine();}
 }
 
 // showChart tab-sync handled inside the function itself
@@ -1341,18 +2246,140 @@ async function handleFiles(files){
       if(!result.date){log(`⚠️ ${f.name}: data não detectada`);continue;}
       const cnt=Object.keys(result.markers).length;
       if(!cnt){log(`⚠️ ${f.name}: nenhum biomarcador detectado`);continue;}
+      let examEntry;
       const ex=TL.find(t=>t.date===result.date);
       if(ex){
         for(const [k,v] of Object.entries(result.markers)) ex.markers[k]=v;
+        if(!ex.sources.includes(result.src)) ex.sources.push(result.src);
+        examEntry = ex;
         log(`✓ ${f.name}: ${cnt} valores adicionados em ${result.date}`);
       }else{
-        TL.push({date:result.date,sources:[result.src],doctors:['Importado'],markers:result.markers,notes:[]});
+        examEntry={date:result.date,sources:[result.src],doctors:['Importado'],markers:result.markers,notes:[]};
+        TL.push(examEntry);
         TL.sort((a,b)=>a.date.localeCompare(b.date));
         log(`✓ ${f.name}: nova coleta ${result.date} com ${cnt} valores`);
       }
+      // Save to Firestore + upload PDF
+      log(`💾 Salvando no banco de dados...`);
+      const pdfUrl = await uploadPDFToStorage(f, result.date);
+      if(pdfUrl) examEntry.pdfUrl = pdfUrl;
+      await saveExamToFirestore(examEntry);
+      log(`✅ ${f.name}: salvo permanentemente`);
     }catch(e){log(`✗ ${f.name}: ${e.message}`);}
   }
   renderSidebar();renderOverview();
+}
+
+// ═══════════════════════════════════════════════════════
+// FIREBASE PERSISTENCE — EXAMS, VACCINES, ANNOTATIONS, PDFS
+// ═══════════════════════════════════════════════════════
+
+function showSync(saving) {
+  const d = document.getElementById('sync-dot');
+  if (!d) return;
+  if (saving) { d.style.display = 'block'; d.className = 'saving'; }
+  else { d.className = ''; setTimeout(() => { d.style.display = 'none'; }, 1200); }
+}
+
+async function loadAllData() {
+  // ── Load exam timeline from Firestore ──
+  const snap = await db.collection('exams').orderBy('date').get();
+  if (snap.empty) {
+    // First run: seed from hardcoded data and persist
+    await seedExamsToFirestore();
+  } else {
+    TL = snap.docs.map(d => {
+      const data = d.data();
+      // ensure arrays exist
+      if (!data.sources) data.sources = [];
+      if (!data.doctors) data.doctors = [];
+      if (!data.notes) data.notes = [];
+      return data;
+    });
+  }
+
+  // ── Load vaccines from Firestore ──
+  try {
+    const vDoc = await db.collection('config').doc('vaccines').get();
+    if (vDoc.exists && vDoc.data().data) {
+      localStorage.setItem('vacc_data', JSON.stringify(vDoc.data().data));
+    }
+  } catch(e) {}
+
+  // ── Load annotations from Firestore ──
+  try {
+    const aDoc = await db.collection('config').doc('annotations').get();
+    if (aDoc.exists && aDoc.data().data) {
+      localStorage.setItem('dash_annotations', JSON.stringify(aDoc.data().data));
+    }
+  } catch(e) {}
+}
+
+async function seedExamsToFirestore() {
+  const seedTL = buildTimeline(RAW_EXAMS);
+  const dlMsg = document.getElementById('dl-msg');
+  dlMsg.textContent = `Salvando ${seedTL.length} exames no banco de dados...`;
+  try {
+    const batch = db.batch();
+    for (const exam of seedTL) {
+      batch.set(db.collection('exams').doc(exam.date), exam);
+    }
+    await batch.commit();
+    TL = seedTL;
+    dlMsg.textContent = '✓ Dados salvos com sucesso!';
+    dlMsg.style.color = '#22c55e';
+    setTimeout(() => { dlMsg.style.color = ''; }, 2000);
+    // Also seed vaccines to Firestore
+    await syncVaccinesToFirestore();
+  } catch(batchErr) {
+    console.error('Batch failed, trying one by one:', batchErr);
+    dlMsg.textContent = 'Salvando... (modo alternativo)';
+    let saved = 0;
+    for (const exam of seedTL) {
+      try {
+        await db.collection('exams').doc(exam.date).set(exam);
+        saved++;
+        dlMsg.textContent = `Salvando exame ${saved}/${seedTL.length}...`;
+      } catch(e) {
+        console.error('Failed to save exam', exam.date, e);
+        throw new Error('Permissão negada ao salvar exame ' + exam.date + ': ' + (e.code || e.message));
+      }
+    }
+    TL = seedTL;
+    dlMsg.textContent = `✓ ${saved} exames salvos!`;
+  }
+}
+
+async function syncVaccinesToFirestore() {
+  try {
+    const vacc = JSON.parse(localStorage.getItem('vacc_data') || '{}');
+    if (Object.keys(vacc).length > 0) {
+      await db.collection('config').doc('vaccines').set({ data: vacc });
+    }
+  } catch(e) { console.warn('Vaccine sync failed:', e); }
+}
+
+async function saveExamToFirestore(exam) {
+  showSync(true);
+  try {
+    await db.collection('exams').doc(exam.date).set(exam, { merge: true });
+    showSync(false);
+  } catch(e) {
+    showSync(false);
+    console.error('Error saving exam:', e);
+  }
+}
+
+async function uploadPDFToStorage(file, date) {
+  try {
+    const path = `pdfs/${date}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    const ref = storage.ref(path);
+    await ref.put(file);
+    return await ref.getDownloadURL();
+  } catch(e) {
+    console.warn('PDF upload to Storage failed:', e);
+    return null;
+  }
 }
 
 function openModal(){document.getElementById('modal-overlay').classList.add('open');}
@@ -1363,16 +2390,338 @@ dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');}
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');handleFiles(e.dataTransfer.files);});
 
+
+// ═══════════════════════════════════════════════════════
+// BIOLOGICAL AGE
+// ═══════════════════════════════════════════════════════
+function calcBioAge() {
+  let offset = 0;
+  const factors = [];
+  const chk = (id, fn) => { const l=latest(id); if(l) fn(l.v); };
+
+  chk('glicose', v => {
+    if(v>105){offset+=3;factors.push({name:'Glicose',val:v,unit:'mg/dL',delta:+3,bad:true});}
+    else if(v>90){offset+=1;factors.push({name:'Glicose',val:v,unit:'mg/dL',delta:+1,bad:true});}
+    else{offset-=1;factors.push({name:'Glicose',val:v,unit:'mg/dL',delta:-1,bad:false});}
+  });
+  chk('hba1c', v => {
+    if(v>5.7){offset+=3;factors.push({name:'HbA1c',val:v,unit:'%',delta:+3,bad:true});}
+    else if(v>5.4){offset+=1;factors.push({name:'HbA1c',val:v,unit:'%',delta:+1,bad:true});}
+    else{offset-=1;factors.push({name:'HbA1c',val:v,unit:'%',delta:-1,bad:false});}
+  });
+  chk('insulina', v => {
+    if(v>15){offset+=3;factors.push({name:'Insulina',val:v,unit:'µUI/mL',delta:+3,bad:true});}
+    else if(v>9){offset+=1;factors.push({name:'Insulina',val:v,unit:'µUI/mL',delta:+1,bad:true});}
+    else{offset-=1;factors.push({name:'Insulina',val:v,unit:'µUI/mL',delta:-1,bad:false});}
+  });
+  chk('pcr', v => {
+    if(v>3){offset+=4;factors.push({name:'PCR-us',val:v,unit:'mg/L',delta:+4,bad:true});}
+    else if(v>0.5){offset+=2;factors.push({name:'PCR-us',val:v,unit:'mg/L',delta:+2,bad:true});}
+    else{offset-=1;factors.push({name:'PCR-us',val:v,unit:'mg/L',delta:-1,bad:false});}
+  });
+  chk('ferritina', v => {
+    if(v>200){offset+=2;factors.push({name:'Ferritina',val:v,unit:'ng/mL',delta:+2,bad:true});}
+    else if(v>150){offset+=1;factors.push({name:'Ferritina',val:v,unit:'ng/mL',delta:+1,bad:true});}
+  });
+  chk('hdl', v => {
+    if(v<40){offset+=3;factors.push({name:'HDL',val:v,unit:'mg/dL',delta:+3,bad:true});}
+    else if(v<55){offset+=1;factors.push({name:'HDL',val:v,unit:'mg/dL',delta:+1,bad:true});}
+    else if(v>=65){offset-=1;factors.push({name:'HDL',val:v,unit:'mg/dL',delta:-1,bad:false});}
+  });
+  chk('ldl', v => {
+    if(v>160){offset+=3;factors.push({name:'LDL',val:v,unit:'mg/dL',delta:+3,bad:true});}
+    else if(v>130){offset+=2;factors.push({name:'LDL',val:v,unit:'mg/dL',delta:+2,bad:true});}
+    else if(v>100){offset+=1;factors.push({name:'LDL',val:v,unit:'mg/dL',delta:+1,bad:true});}
+    else{offset-=0.5;factors.push({name:'LDL',val:v,unit:'mg/dL',delta:-0.5,bad:false});}
+  });
+  chk('vitD', v => {
+    if(v<20){offset+=3;factors.push({name:'Vit D',val:v,unit:'ng/mL',delta:+3,bad:true});}
+    else if(v<40){offset+=1;factors.push({name:'Vit D',val:v,unit:'ng/mL',delta:+1,bad:true});}
+    else if(v>=50&&v<=70){offset-=1;factors.push({name:'Vit D',val:v,unit:'ng/mL',delta:-1,bad:false});}
+  });
+  chk('test_total', v => {
+    if(v>=600){offset-=1;factors.push({name:'Testosterona',val:v,unit:'ng/dL',delta:-1,bad:false});}
+    else if(v<400){offset+=2;factors.push({name:'Testosterona',val:v,unit:'ng/dL',delta:+2,bad:true});}
+  });
+  chk('albumina', v => {
+    if(v>=4.5){offset-=0.5;factors.push({name:'Albumina',val:v,unit:'g/dL',delta:-0.5,bad:false});}
+  });
+
+  return {bioAge: Math.round(CHRON_AGE + offset), offset: Math.round(offset), factors};
+}
+
+// ═══════════════════════════════════════════════════════
+// SCORE EVOLUTION
+// ═══════════════════════════════════════════════════════
+function buildScoreHistory() {
+  return TL.map(t => {
+    const mks = Object.keys(t.markers).filter(id=>DEFS[id]);
+    const opt = mks.filter(id=>status(id,t.markers[id])==='green').length;
+    return {date:t.date, score: mks.length?Math.round(opt/mks.length*100):null, n:mks.length};
+  }).filter(x=>x.score!==null&&x.n>=3);
+}
+
+// ═══════════════════════════════════════════════════════
+// CORRELATIONS
+// ═══════════════════════════════════════════════════════
+function pearson(xs, ys) {
+  const n=xs.length; if(n<4) return null;
+  const mx=xs.reduce((a,b)=>a+b)/n, my=ys.reduce((a,b)=>a+b)/n;
+  let num=0,dx2=0,dy2=0;
+  for(let i=0;i<n;i++){const dx=xs[i]-mx,dy=ys[i]-my;num+=dx*dy;dx2+=dx*dx;dy2+=dy*dy;}
+  const den=Math.sqrt(dx2*dy2);
+  return den===0?null:+(num/den).toFixed(2);
+}
+
+function computeCorrelations() {
+  const ids = Object.keys(DEFS).filter(id=>series(id).length>=4);
+  const results = [];
+  for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++) {
+    const a=ids[i],b=ids[j];
+    const sa=series(a),sb=series(b);
+    // align by date
+    const paired=sa.map(p=>{const q=sb.find(x=>x.date===p.date);return q?[p.v,q.v]:null}).filter(Boolean);
+    if(paired.length<4) continue;
+    const r=pearson(paired.map(p=>p[0]),paired.map(p=>p[1]));
+    if(r!==null&&Math.abs(r)>0.5) results.push({a,b,r,n:paired.length});
+  }
+  return results.sort((x,y)=>Math.abs(y.r)-Math.abs(x.r)).slice(0,8);
+}
+
+// ═══════════════════════════════════════════════════════
+// NEXT EXAM RECOMMENDATIONS
+// ═══════════════════════════════════════════════════════
+function computeNextExamRecs() {
+  const recs = [];
+  // Elevated LDL → ApoB, Lp(a)
+  const ldl=latest('ldl'); if(ldl&&ldl.v>130)
+    recs.push({icon:'🧪',title:'Solicitar ApoB e Lp(a)',desc:'LDL elevado ('+fmt(ldl.v)+' mg/dL). ApoB mede partículas aterogênicas reais; Lp(a) é risco cardiovascular independente. Ambos são mais precisos que LDL calculado.'});
+  // Elevated ferritin → hepcidina
+  const fer=latest('ferritina'); if(fer&&fer.v>150)
+    recs.push({icon:'🩸',title:'Solicitar Hepcidina e Saturação de Transferrina em série',desc:'Ferritina '+fmt(fer.v)+' ng/mL. Hepcidina é o regulador central do ferro — identifica se a elevação é inflamatória ou de sobrecarga real. Saturação >45% sugere hemocromatose.'});
+  // Low HDL → Apo A-I
+  const hdl=latest('hdl'); if(hdl&&hdl.v<50)
+    recs.push({icon:'❤️',title:'Solicitar Apo A-I e LDL-P (partículas LDL)',desc:'HDL baixo ('+fmt(hdl.v)+' mg/dL). ApoA-I mede capacidade funcional do HDL; LDL-P quantifica partículas pequenas densas (mais aterogênicas que LDL total).'});
+  // Testosterone variability → LH, FSH
+  const ts=series('test_total'); if(ts.length>=3&&(Math.max(...ts.map(p=>p.v))-Math.min(...ts.map(p=>p.v)))>400)
+    recs.push({icon:'⚡',title:'Solicitar LH, FSH, Prolactina e Testosterona Livre+Biodisponível',desc:'Variação extrema de testosterona. LH/FSH avaliam eixo hipotálamo-hipófise. Testar pela manhã (8–10h), sem treino 24h antes.'});
+  // High insulin → OGTT + curva insulínica
+  const ins=series('insulina'); const maxIns=ins.length?Math.max(...ins.map(p=>p.v)):0;
+  if(maxIns>20)
+    recs.push({icon:'🔬',title:'Curva Insulínica (0–30–60–120 min) + HOMA-IR',desc:'Insulina máx histórica: '+fmt(maxIns)+' µUI/mL. A curva insulínica detecta resistência periférica precocemente, antes que a glicemia se altere. HOMA-IR >2.5 confirma RI.'});
+  // Missing B12 active form
+  const b12=latest('vitB12'); if(b12&&b12.v>900)
+    recs.push({icon:'💊',title:'Solicitar Holotranscobalamina (B12 ativa) e Metilmalônico',desc:'B12 total '+fmt(b12.v)+' pg/mL. A fração ativa (holotranscobalamina) é mais clinicamente relevante; B12 elevada sem suplementação pode mascarar deficiência funcional.'});
+  // Elevated CRP → IL-6, fibrinogênio
+  const pcr=latest('pcr'); if(pcr&&pcr.v>1)
+    recs.push({icon:'🔥',title:'Solicitar IL-6 e Fibrinogênio',desc:'PCR '+fmt(pcr.v)+' mg/L. IL-6 é o principal indutor de CRP — sua elevação crônica está associada a sarcopenia e aceleração do envelhecimento. Fibrinogênio eleva risco trombótico.'});
+  // Always recommend
+  recs.push({icon:'🫀',title:'Ecocardiograma + Escore de Cálcio Coronário (CAC)',desc:'Homens a partir de 30 anos com histórico de LDL ou PCR elevados devem considerar escore de cálcio coronário. CAC=0 praticamente exclui eventos cardiovasculares nos próximos 10 anos.'});
+  recs.push({icon:'🧬',title:'Testes de Longevidade Avançados',desc:'Considerar: GlycanAge (idade inflamatória), TruAge (relógio epigenético), telômeros, microbioma intestinal e painel hormonal completo (DHEA-S, IGF-1, cortisol salivar 4 pontos).'});
+  return recs;
+}
+
+// ═══════════════════════════════════════════════════════
+// VACCINE TAB
+// ═══════════════════════════════════════════════════════
+const VACCINES = [
+  {id:'influenza',    name:'Influenza (Gripe)',                  freq:'Anual · Campanha out–nov · ⚠️ Última dose 2019 — desatualizada', priority:'rec',    age:0},
+  {id:'covid',        name:'COVID-19',                           freq:'Dose de reforço anual recomendada',                             priority:'rec',    age:0},
+  {id:'hepB',         name:'Hepatite B',                         freq:'3 doses (0, 1, 6 meses) — série completa ✓',                   priority:'must',   age:0},
+  {id:'hepA',         name:'Hepatite A',                         freq:'2 doses (0, 6–12 meses)',                                      priority:'must',   age:0},
+  {id:'mmr',          name:'Tríplice Viral (SCR)',                freq:'2 doses — série completa ✓',                                   priority:'must',   age:0},
+  {id:'dtpa',         name:'dTpa — Difteria/Tétano/Coqueluche', freq:'Reforço a cada 10 anos · ⚠️ Possui dT (Dupla), mas não dTpa', priority:'must',   age:0},
+  {id:'varicela',     name:'Varicela (Catapora)',                freq:'2 doses se sem histórico de doença',                           priority:'must',   age:0},
+  {id:'hpv',          name:'HPV (Gardasil 9)',                   freq:'3 doses — série completa ✓ (jul/19–jan/20)',                   priority:'rec',    age:0},
+  {id:'febreAmarela', name:'Febre Amarela',                      freq:'Dose única vitalícia ✓',                                       priority:'must',   age:0},
+  {id:'pneumo',       name:'Pneumocócica (PCV13/PCV20)',         freq:'1 dose tomada (PCV13) · reforço PCV20 recomendado',            priority:'rec',    age:0},
+  {id:'meningo',      name:'Meningocócica ACWY',                 freq:'1–2 doses',                                                    priority:'rec',    age:0},
+  {id:'dengue',       name:'Dengue (Qdenga)',                    freq:'2 doses · intervalo de 3 meses',                               priority:'rec',    age:0},
+  {id:'zoster',       name:'Herpes Zóster (Shingrix)',           freq:'2 doses · a partir dos 50 anos',                              priority:'future', age:50},
+  {id:'rsv',          name:'RSV (Abrysvo)',                      freq:'1 dose · a partir dos 60 anos',                               priority:'future', age:60},
+];
+
+function getVaccineData() {
+  try { return JSON.parse(localStorage.getItem('vacc_data')||'{}'); } catch(e){return {};}
+}
+function saveVaccineData(id, field, val) {
+  const d=getVaccineData();
+  if(!d[id]) d[id]={};
+  d[id][field]=val;
+  localStorage.setItem('vacc_data',JSON.stringify(d));
+  // Persist to Firestore
+  showSync(true);
+  db.collection('config').doc('vaccines').set({ data: d })
+    .then(() => showSync(false)).catch(() => showSync(false));
+}
+
+function initVaccineDefaults() {
+  // Pre-populate from Marcos Paulo's physical vaccine card (SUS) — only if no data yet
+  if(localStorage.getItem('vacc_data')) return;
+  const defaults = {
+    hepB:         {done:true,  date:'2020-01-23', note:'3 doses: 22/07/19, 05/09/19, 23/01/20'},
+    mmr:          {done:true,  date:'2019-09-03', note:'2 doses: 22/07/19, 03/09/19'},
+    hpv:          {done:true,  date:'2020-01-25', note:'3 doses: 22/07/19, 23/09/19, 25/01/20'},
+    febreAmarela: {done:true,  date:'2019-09-22', note:'Dose única — Fiocruz'},
+    pneumo:       {done:true,  date:'2019-07-22', note:'PCV13 (Pneumo 13) — Laboratório Padrão SA'},
+    influenza:    {done:true,  date:'2019-06-03', note:'Última dose 2019 — desatualizada, renovar anualmente'},
+    dtpa:         {done:false,                    note:'Possui Dupla Adulto (dT) — 3 doses: jul/set/nov 2019. Solicitar dTpa com coqueluche no próximo reforço'},
+    covid:        {done:false},
+    hepA:         {done:false},
+    varicela:     {done:false},
+    meningo:      {done:false},
+    dengue:       {done:false},
+  };
+  localStorage.setItem('vacc_data', JSON.stringify(defaults));
+}
+
+function renderVaccine() {
+  const data = getVaccineData();
+  let taken=0, missing=0, future=0, outdated=0;
+
+  for(const v of VACCINES) {
+    const vd = data[v.id]||{};
+    const done = !!vd.done;
+    const isAnnualOutdated = v.id==='influenza' && done && vd.date && (new Date()-new Date(vd.date))>365*24*3600*1e3;
+    if(v.priority==='future') future++;
+    else if(isAnnualOutdated){ outdated++; missing++; }
+    else if(done) taken++;
+    else missing++;
+  }
+
+  let html = `<div class="vacc-summary">
+    <div class="vacc-kpi"><div class="vk-num" style="color:var(--green)">${taken}</div><div class="vk-lbl">Em Dia</div></div>
+    <div class="vacc-kpi"><div class="vk-num" style="color:var(--red)">${missing}</div><div class="vk-lbl">Pendentes${outdated?` (${outdated} desatualizada${outdated>1?'s':''})`:''}</div></div>
+    <div class="vacc-kpi"><div class="vk-num" style="color:var(--muted)">${future}</div><div class="vk-lbl">Para o Futuro</div></div>
+    <div class="vacc-kpi"><div class="vk-num" style="color:var(--indigo)">${VACCINES.length}</div><div class="vk-lbl">No Protocolo</div></div>
+  </div>`;
+
+  const notice = missing > 0
+    ? `<div style="background:var(--amber-l);border:1px solid var(--amber-m);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--amber);margin-bottom:20px;display:flex;gap:8px"><span>⚠️</span><span>${missing} vacina${missing>1?'s':''} pendente${missing>1?'s':''} no protocolo de longevidade. Consulte seu médico para atualizar o cartão.</span></div>`
+    : `<div style="background:var(--green-l);border:1px solid var(--green-m);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--green);margin-bottom:20px;display:flex;gap:8px"><span>✅</span><span>Todas as vacinas do protocolo atual estão em dia!</span></div>`;
+  html += notice;
+
+  html += `<div class="vacc-list">
+    <div class="vacc-list-head">
+      <span>📋 Cartão de Vacinação — Protocolo de Longevidade</span>
+      <button class="tb-btn" onclick="openVaccModal()" style="font-size:11px;padding:5px 10px">↑ Importar Cartão PDF</button>
+    </div>`;
+
+  for(const v of VACCINES) {
+    const vd = data[v.id]||{};
+    const isDone = !!vd.done;
+    const isFuture = v.priority==='future';
+    const date = vd.date||'';
+    const note = vd.note||'';
+    // Influenza: if done but last dose > 12 months ago, mark outdated
+    const isInfluenzaOutdated = v.id==='influenza' && isDone && date && (new Date()-new Date(date))>365*24*3600*1e3;
+    const badgeClass = isFuture?'fut': isInfluenzaOutdated?'miss': isDone?'done':'miss';
+    const badgeLabel = isFuture?`A partir dos ${v.age} anos`: isInfluenzaOutdated?'⚠️ Desatualizada': isDone?'✓ Tomada':'Pendente';
+    const checkClass = isDone?'done':'';
+    const checkMark = isDone?'✓':'';
+
+    html += `<div class="vacc-row">
+      <div class="vacc-check ${checkClass}" onclick="toggleVacc('${v.id}')" title="Marcar como tomada">${checkMark}</div>
+      <div class="vacc-info">
+        <div class="vacc-name">${v.name}</div>
+        <div class="vacc-meta">${v.freq}</div>
+        ${note?`<div class="vacc-note">📋 ${note}</div>`:''}
+      </div>
+      ${!isFuture?`<input class="vacc-date-input" type="date" value="${date}" onchange="saveVaccineData('${v.id}','date',this.value);renderVaccine()" title="Data da última dose" placeholder="dd/mm/aaaa">`:'<span></span>'}
+      <span class="vacc-badge ${badgeClass}">${badgeLabel}</span>
+    </div>`;
+  }
+  html += `</div>`;
+
+  // Upload modal
+  html += `<div id="vacc-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(2px)">
+    <div class="modal">
+      <div class="modal-head"><h3>Importar Cartão de Vacinação</h3><button class="modal-close" onclick="closeVaccModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="drop-zone" id="vacc-drop-zone" onclick="document.getElementById('vacc-file-input').click()">
+          <div class="dz-icon">💉</div>
+          <div class="dz-title">Solte o PDF ou imagem do cartão de vacinação</div>
+          <div class="dz-sub">Suporta PDF e imagens (JPG, PNG)</div>
+        </div>
+        <input type="file" id="vacc-file-input" accept=".pdf,.jpg,.jpeg,.png" onchange="handleVaccFile(this.files)">
+        <div id="vacc-log" style="margin-top:10px;font-size:12px;color:var(--muted);background:var(--surface2);border-radius:7px;padding:10px;display:none;line-height:1.7"></div>
+      </div>
+      <div class="modal-foot"><button class="btn-close" onclick="closeVaccModal()">Fechar</button></div>
+    </div>
+  </div>`;
+
+  document.getElementById('vaccine-view').innerHTML = html;
+
+  // Setup drag-drop for vaccine modal
+  const vdz = document.getElementById('vacc-drop-zone');
+  if(vdz){
+    vdz.addEventListener('dragover', e=>{e.preventDefault();vdz.classList.add('drag');});
+    vdz.addEventListener('dragleave', ()=>vdz.classList.remove('drag'));
+    vdz.addEventListener('drop', e=>{e.preventDefault();vdz.classList.remove('drag');handleVaccFile(e.dataTransfer.files);});
+  }
+}
+
+function toggleVacc(id) {
+  const d=getVaccineData();
+  const cur = d[id]?.done;
+  saveVaccineData(id,'done',!cur);
+  if(!cur) saveVaccineData(id,'date', new Date().toISOString().slice(0,10));
+  renderVaccine();
+}
+
+function openVaccModal(){document.getElementById('vacc-modal-overlay').style.display='flex';}
+function closeVaccModal(){document.getElementById('vacc-modal-overlay').style.display='none';}
+
+async function handleVaccFile(files){
+  const logEl=document.getElementById('vacc-log');
+  logEl.style.display='block';logEl.innerHTML='';
+  const logV=msg=>{logEl.innerHTML+=`<div>${msg}</div>`;logEl.scrollTop=logEl.scrollHeight;};
+  for(const f of files){
+    logV(`Processando ${f.name}...`);
+    try{
+      let text='';
+      if(f.name.endsWith('.pdf')){
+        text=await extractPDFText(f);
+      } else {
+        logV('⚠️ Para imagens, detecte as vacinas manualmente e marque-as na lista.');
+        continue;
+      }
+      const lower=text.toLowerCase();
+      let found=0;
+      for(const v of VACCINES){
+        const names={
+          influenza:['influenza','gripe'],covid:['covid','sars-cov','coronavac'],
+          hepB:['hepatite b'],hepA:['hepatite a'],mmr:['triplice viral','sarampo','scr'],
+          dtpa:['dtpa','tetano','difteria'],varicela:['varicela','catapora'],
+          hpv:['hpv','papiloma'],pneumo:['pneumococ'],meningo:['meningococ'],
+          dengue:['dengue','qdenga'],zoster:['zoster','shingrix','herpes zoster'],
+          febreAmarela:['febre amarela','amarela','fiocruz'],
+        };
+        const keywords=names[v.id]||[];
+        if(keywords.some(k=>lower.includes(k))){
+          saveVaccineData(v.id,'done',true);
+          found++;
+          logV(`✓ Detectada: ${v.name}`);
+        }
+      }
+      if(!found) logV('Nenhuma vacina detectada automaticamente. Marque manualmente na lista.');
+      else{ renderVaccine(); logV(`✓ ${found} vacina(s) marcada(s)!`); }
+    }catch(e){logV(`✗ Erro: ${e.message}`);}
+  }
+}
+
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 function init(){
+  if(dashInited&&arguments.length===0)return;
+  initVaccineDefaults();
   renderSidebar();
   renderOverview();
   const total=Object.keys(DEFS).filter(id=>latest(id)!=null).length;
   document.getElementById('topbar-meta').textContent=`${TL.length} coletas · ${total} biomarcadores · Último: ${TL[TL.length-1].date}`;
 }
-init();
+// init() is called by auth.onAuthStateChanged after login
 </script>
 </body>
 </html>
