@@ -802,7 +802,7 @@ auth.onAuthStateChanged(async user => {
         }
       }
       document.getElementById('data-loading').style.display = 'none';
-      init();
+      init('loaded');
     }
   } else {
     currentUser = null; isAdmin = false;
