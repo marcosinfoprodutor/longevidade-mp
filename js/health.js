@@ -922,6 +922,7 @@ function switchHealthTab(tab, btn) {
   } else {
     document.getElementById('topbar-meta').textContent='';
   }
+  if(tab==='overview'){renderOverview();}
   if(tab==='diag'){renderDiag();}
   if(tab==='alerts'){renderAlerts();}
   if(tab==='timeline'){renderTimeline();}

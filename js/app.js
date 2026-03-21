@@ -73,12 +73,13 @@ function closeSidebar() {
 function init(reason) {
   if (dashInited && !reason) return;
 
-  // Default: health module active
-  switchModule('health');
-
-  // Health sub-init
+  // Pre-render health sidebar and overview (so it's ready when user switches)
+  initVaccineDefaults();
   renderHealthSidebar();
-  switchHealthTab('overview', document.querySelector('#health-tabs .nav-tab'));
+  renderOverview();
+
+  // Default: Family Office module
+  switchModule('finance');
 }
 
 // ── DOMContentLoaded wiring ───────────────────────────

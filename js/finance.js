@@ -108,9 +108,9 @@ function computeBreakdown() {
 }
 
 // ── Render ────────────────────────────────────────────
-function renderFinance() {
+async function renderFinance() {
+  await loadFinanceAssets();
   renderPortfolioView();
-  renderHistoryView();
 }
 
 function renderPortfolioView() {
