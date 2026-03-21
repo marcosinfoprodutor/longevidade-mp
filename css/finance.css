@@ -1,0 +1,71 @@
+/* ── FINANCE MODULE ──────────────────────────────── */
+:root {
+  --cat-acoes:     #4F46E5;
+  --cat-fiis:      #059669;
+  --cat-rf:        #2563EB;
+  --cat-crypto:    #D97706;
+  --cat-outros:    #6B7280;
+}
+
+.fin-patrimonio-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
+.fin-patrimonio-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
+.fin-patrimonio-total{font-size:34px;font-weight:900;color:var(--text);letter-spacing:-1.5px;line-height:1;margin-bottom:16px}
+.fin-cat-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;margin-bottom:12px}
+.fin-cat-segment{height:100%;border-radius:4px;transition:flex .3s}
+.fin-cat-legend{display:flex;flex-wrap:wrap;gap:10px 16px}
+.fin-cat-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.fin-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.fin-cat-pct{font-weight:600;color:var(--text2)}
+
+.fin-assets-section-head{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;margin-top:20px;display:flex;align-items:center;gap:6px}
+.fin-assets-section-head::after{content:'';flex:1;height:1px;background:var(--border)}
+.fin-assets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.fin-asset-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;transition:all .18s;cursor:default}
+.fin-asset-card:hover{border-color:var(--indigo-m);box-shadow:0 4px 16px rgba(79,70,229,.08);transform:translateY(-1px)}
+.fin-asset-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:12px 0 0 12px}
+.fin-asset-card.cat-acoes::before{background:var(--cat-acoes)}
+.fin-asset-card.cat-fiis::before{background:var(--cat-fiis)}
+.fin-asset-card.cat-renda_fixa::before{background:var(--cat-rf)}
+.fin-asset-card.cat-crypto::before{background:var(--cat-crypto)}
+.fin-asset-card.cat-outros::before{background:var(--cat-outros)}
+.fin-asset-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.fin-asset-ticker{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.3px}
+.fin-asset-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.3px;text-transform:uppercase}
+.fin-asset-badge.cat-acoes{background:var(--indigo-l);color:var(--indigo)}
+.fin-asset-badge.cat-fiis{background:var(--green-l);color:var(--green)}
+.fin-asset-badge.cat-renda_fixa{background:var(--blue-l);color:var(--blue)}
+.fin-asset-badge.cat-crypto{background:var(--amber-l);color:var(--amber)}
+.fin-asset-badge.cat-outros{background:var(--surface2);color:var(--muted)}
+.fin-asset-name{font-size:11px;color:var(--muted);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fin-asset-qty{font-size:11px;color:var(--muted);margin-bottom:2px}
+.fin-asset-pm{font-size:11px;color:var(--muted2);margin-bottom:10px}
+.fin-asset-divider{height:1px;background:var(--border);margin:10px 0}
+.fin-asset-current{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;line-height:1;margin-bottom:4px}
+.fin-asset-return{font-size:12px;font-weight:600;margin-bottom:8px}
+.fin-asset-return.pos{color:var(--green)}
+.fin-asset-return.neg{color:var(--red)}
+.fin-asset-total{font-size:12px;color:var(--muted);margin-bottom:12px}
+.fin-asset-total strong{color:var(--text2);font-weight:700}
+.fin-asset-actions{display:flex;gap:6px}
+.fin-asset-btn{flex:1;padding:5px 0;border-radius:6px;border:1px solid var(--border2);background:none;cursor:pointer;font-size:11px;font-weight:500;font-family:inherit;color:var(--muted2);transition:all .12s}
+.fin-asset-btn:hover{border-color:var(--indigo-m);color:var(--indigo);background:var(--indigo-l)}
+.fin-asset-btn.danger:hover{border-color:var(--red);color:var(--red);background:var(--red-l)}
+
+.fin-empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.fin-empty-icon{font-size:48px;margin-bottom:16px}
+.fin-empty-text{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.fin-empty-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.fin-empty-btn{padding:10px 24px;background:var(--indigo);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+
+.fin-hist-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-top:20px}
+.fin-hist-empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+
+/* Responsive */
+@media(max-width:768px){
+  .fin-assets-grid{grid-template-columns:1fr 1fr}
+  .fin-patrimonio-total{font-size:26px}
+}
+@media(max-width:480px){
+  .fin-assets-grid{grid-template-columns:1fr}
+  .fin-cat-legend{gap:6px}
+}
