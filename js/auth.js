@@ -11,12 +11,18 @@ auth.onAuthStateChanged(async user => {
     }
     currentUser = user;
     isAdmin = user.email === ADMIN_EMAIL;
-    currentUserRole = isAdmin ? 'admin' : 'viewer';
-    // Try to fetch role from Firestore
+    currentUserRole    = isAdmin ? 'admin' : 'viewer';
+    currentUserModules = 'all';
+    // Fetch role + modules from Firestore
     try {
       const rdoc = await db.collection('allowed_users').doc(user.uid).get();
-      if(rdoc.exists) currentUserRole = rdoc.data().role || 'viewer';
+      if(rdoc.exists) {
+        currentUserRole    = rdoc.data().role    || 'viewer';
+        currentUserModules = rdoc.data().modules || 'all';
+      }
     } catch(e){}
+    // Log this login session (fire and forget)
+    logLogin(user.uid);
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('sidebar').style.display = '';
     document.getElementById('main').style.display = '';
@@ -53,6 +59,37 @@ auth.onAuthStateChanged(async user => {
     document.getElementById('main').style.display = 'none';
   }
 });
+
+// ─── Login logging ────────────────────────────────────
+function parseUserAgent(ua) {
+  let browser = 'Navegador', os = 'Dispositivo';
+  if (/Edg/i.test(ua))             browser = 'Edge';
+  else if (/Chrome/i.test(ua))     browser = 'Chrome';
+  else if (/Firefox/i.test(ua))    browser = 'Firefox';
+  else if (/Safari/i.test(ua))     browser = 'Safari';
+  if (/iPhone|iPad/i.test(ua))     os = 'iOS';
+  else if (/Android/i.test(ua))    os = 'Android';
+  else if (/Mac OS X/i.test(ua))   os = 'macOS';
+  else if (/Windows/i.test(ua))    os = 'Windows';
+  else if (/Linux/i.test(ua))      os = 'Linux';
+  return `${browser} · ${os}`;
+}
+
+async function logLogin(uid) {
+  const device = parseUserAgent(navigator.userAgent);
+  const ref = db.collection('login_logs').doc(uid);
+  try {
+    const snap = await ref.get();
+    const prev = snap.exists ? (snap.data().entries || []) : [];
+    const newEntry = { ts: new Date().toISOString(), device };
+    const entries = [newEntry, ...prev].slice(0, 20);
+    await ref.set({
+      total: firebase.firestore.FieldValue.increment(1),
+      last_login: firebase.firestore.FieldValue.serverTimestamp(),
+      entries
+    }, { merge: true });
+  } catch(e) { console.warn('logLogin failed:', e); }
+}
 
 async function checkAllowed(uid) {
   try {
@@ -140,7 +177,7 @@ async function loadUsers() {
     snap.forEach(doc => {
       const u = doc.data();
       if(!knownEmails.has(u.email)) {
-        users.push({uid:doc.id, email:u.email, name:u.name||u.email, role:u.role||'viewer', fixed:false});
+        users.push({uid:doc.id, email:u.email, name:u.name||u.email, role:u.role||'viewer', modules:u.modules||'all', fixed:false});
         knownEmails.add(u.email);
       }
     });
@@ -153,11 +190,13 @@ async function loadUsers() {
     }
   });
   if(users.length===0){ list.innerHTML='<div class="am-empty">Nenhum usuário com acesso.</div>'; return; }
+  const MOD_LABELS = {all:'🔓 Tudo', health:'🧬 Saúde', finance:'💼 Finance'};
   let html = '';
   users.forEach(u => {
     const initial = (u.name||u.email||'?')[0].toUpperCase();
-    const roleCls = ROLE_CLASS[u.role]||'viewer';
+    const roleCls   = ROLE_CLASS[u.role]||'viewer';
     const roleLabel = ROLE_LABELS[u.role]||'Visualizador';
+    const modVal    = u.modules || 'all';
     const isMe = u.email === currentUser?.email;
     html += `<div class="u-row">
       <div class="u-av role-${roleCls}">${initial}</div>
@@ -173,12 +212,19 @@ async function loadUsers() {
           <option value="editor"${u.role==='editor'?' selected':''}>✏️ Editor</option>
           <option value="admin"${u.role==='admin'?' selected':''}>⚙️ Admin</option>
         </select>` : `<span class="role-badge ${roleCls}">${roleLabel}</span>`}
+        ${firestoreOk&&!u.fixed ? `<select class="u-select-modules" onchange="updateModules('${u.uid}',this.value)" title="Módulos acessíveis">
+          <option value="all"${modVal==='all'?' selected':''}>🔓 Tudo</option>
+          <option value="health"${modVal==='health'?' selected':''}>🧬 Saúde</option>
+          <option value="finance"${modVal==='finance'?' selected':''}>💼 Finance</option>
+        </select>` : `<span class="role-badge">${MOD_LABELS[modVal]||'🔓 Tudo'}</span>`}
       </div>
       <div class="u-actions">
+        <button class="u-act-btn" onclick="toggleLoginHistory('${u.uid}',this)" title="Ver histórico de acessos">📋 Histórico</button>
         ${!isMe ? `<button class="u-act-btn" onclick="resendInvite('${u.email}',this)" title="Reenviar email de acesso">↺ Reenviar</button>` : ''}
         ${!isMe&&!u.fixed ? `<button class="u-act-btn danger" onclick="removeUser('${u.uid}','${u.email}')">Remover</button>` : ''}
       </div>
-    </div>`;
+    </div>
+    <div class="u-history" id="hist-${u.uid}" style="display:none"></div>`;
   });
   if(!firestoreOk) html += `<div style="margin-top:12px;padding:10px 12px;background:var(--amber-l);border:1px solid var(--amber-m);border-radius:8px;font-size:11px;color:var(--amber)">
     ⚠️ Atualize as regras do Firestore (ver abaixo) para salvar e gerenciar usuários dinamicamente.
@@ -187,9 +233,10 @@ async function loadUsers() {
 }
 
 async function addUser() {
-  const name  = document.getElementById('am-name').value.trim();
-  const email = document.getElementById('am-email').value.trim();
-  const role  = document.querySelector('input[name="am-role"]:checked')?.value || 'viewer';
+  const name    = document.getElementById('am-name').value.trim();
+  const email   = document.getElementById('am-email').value.trim();
+  const role    = document.querySelector('input[name="am-role"]:checked')?.value    || 'viewer';
+  const modules = document.querySelector('input[name="am-modules"]:checked')?.value || 'all';
   const err   = document.getElementById('am-err');
   const succ  = document.getElementById('am-success');
   const btn   = document.getElementById('am-submit-btn');
@@ -205,7 +252,7 @@ async function addUser() {
     await sec.auth().signOut(); await sec.delete();
     try {
       await db.collection('allowed_users').doc(uid).set({
-        email, name, role, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        email, name, role, modules, createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     } catch(fe) {}
     await auth.sendPasswordResetEmail(email);
@@ -226,6 +273,49 @@ async function updateRole(uid, newRole) {
   try {
     await db.collection('allowed_users').doc(uid).update({role: newRole});
   } catch(e) { alert('Erro ao atualizar função: '+e.message); }
+}
+
+async function updateModules(uid, modules) {
+  try {
+    await db.collection('allowed_users').doc(uid).update({modules});
+  } catch(e) { alert('Erro ao atualizar acesso: '+e.message); }
+}
+
+async function toggleLoginHistory(uid, btn) {
+  const el = document.getElementById('hist-' + uid);
+  if (!el) return;
+  if (el.style.display !== 'none') {
+    el.style.display = 'none';
+    btn.textContent = '📋 Histórico';
+    return;
+  }
+  btn.textContent = '⏳ Carregando...';
+  el.innerHTML = '';
+  el.style.display = 'block';
+  try {
+    const snap = await db.collection('login_logs').doc(uid).get();
+    if (!snap.exists || !snap.data().entries?.length) {
+      el.innerHTML = '<div class="u-hist-empty">Nenhum acesso registrado ainda.</div>';
+    } else {
+      const { total, entries } = snap.data();
+      el.innerHTML = `
+        <div class="u-hist-head">${total} sess${total===1?'ão':'ões'} registradas · exibindo últimas ${entries.length}</div>
+        <table class="u-hist-table">
+          <thead><tr><th>#</th><th>Data / Hora</th><th>Dispositivo</th></tr></thead>
+          <tbody>${entries.map((e, i) => `
+            <tr>
+              <td class="u-hist-num">${total - i}</td>
+              <td>${new Date(e.ts).toLocaleString('pt-BR')}</td>
+              <td>${e.device}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+    btn.textContent = '▲ Fechar';
+  } catch(err) {
+    el.innerHTML = `<div class="u-hist-empty">Erro ao carregar: ${err.message}</div>`;
+    btn.textContent = '📋 Histórico';
+  }
 }
 
 async function removeUser(uid, email) {

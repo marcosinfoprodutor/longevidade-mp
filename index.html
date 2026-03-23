@@ -48,6 +48,32 @@
           <input type="email" id="am-email" placeholder="email@clinica.com.br">
         </div>
         <div class="am-field">
+          <label>Acesso aos módulos</label>
+          <div class="am-roles">
+            <label class="am-role-opt">
+              <input type="radio" name="am-modules" value="all" checked>
+              <div class="am-role-card">
+                <div class="am-role-name">🔓 Todos os módulos</div>
+                <div class="am-role-desc">Acesso completo ao Family Office e ao painel de Saúde.</div>
+              </div>
+            </label>
+            <label class="am-role-opt">
+              <input type="radio" name="am-modules" value="health">
+              <div class="am-role-card">
+                <div class="am-role-name">🧬 Só Saúde</div>
+                <div class="am-role-desc">Vê apenas o painel de exames, diagnósticos e vacinas. Ideal para médicos.</div>
+              </div>
+            </label>
+            <label class="am-role-opt">
+              <input type="radio" name="am-modules" value="finance">
+              <div class="am-role-card">
+                <div class="am-role-name">💼 Só Family Office</div>
+                <div class="am-role-desc">Vê apenas os investimentos e patrimônio. Ideal para contador/assessor.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="am-field">
           <label>Nível de acesso</label>
           <div class="am-roles">
             <label class="am-role-opt">
@@ -125,6 +151,10 @@ service cloud.firestore {
     match /finance_snapshots/{docId} {
       allow read: if request.auth != null;
       allow write: if canEdit();
+    }
+    match /login_logs/{uid} {
+      allow read: if isAdmin();
+      allow write: if request.auth != null && request.auth.uid == uid;
     }
   }
 }</div>

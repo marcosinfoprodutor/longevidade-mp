@@ -207,6 +207,19 @@ body{font-family:'Inter',-apple-system,sans-serif;font-size:13px;background:var(
 .am-empty{text-align:center;padding:32px;color:var(--muted);font-size:13px}
 .u-select-role{border:1px solid var(--border);border-radius:6px;font-size:11px;padding:3px 6px;font-family:inherit;background:var(--surface);color:var(--text2);cursor:pointer;outline:none}
 
+/* ── LOGIN HISTORY ───────────────────────────────── */
+.u-history{background:var(--surface2);border-top:1px solid var(--border);padding:12px 16px;border-radius:0 0 10px 10px;margin-top:-8px;margin-bottom:8px}
+.u-hist-head{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px}
+.u-hist-table{width:100%;border-collapse:collapse;font-size:11px}
+.u-hist-table th{text-align:left;color:var(--muted2);font-weight:600;padding:4px 8px 6px;border-bottom:1px solid var(--border)}
+.u-hist-table td{padding:5px 8px;color:var(--text2);border-bottom:1px solid var(--border)}
+.u-hist-table tr:last-child td{border-bottom:none}
+.u-hist-empty{font-size:12px;color:var(--muted);text-align:center;padding:12px}
+
+/* ── MODULE SELECT IN USER ROW ───────────────────── */
+.u-select-modules{font-size:11px;padding:3px 6px;border:1px solid var(--border2);border-radius:5px;background:var(--surface);color:var(--text2);cursor:pointer;font-family:inherit;outline:none}
+.u-select-modules:focus{border-color:var(--indigo)}
+
 /* ── COMPARE SELECT ──────────────────────────────── */
 .compare-sel{padding:6px 10px;border:1px solid var(--border2);border-radius:7px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text2);cursor:pointer;outline:none}
 .compare-sel:focus{border-color:var(--indigo)}

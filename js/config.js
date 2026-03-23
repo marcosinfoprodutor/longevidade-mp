@@ -23,7 +23,8 @@ const ALLOWED_EMAILS = [
 ];
 let currentUser = null;
 let isAdmin = false;
-let currentUserRole = 'viewer'; // 'admin' | 'editor' | 'viewer'
+let currentUserRole    = 'viewer'; // 'admin' | 'editor' | 'viewer'
+let currentUserModules = 'all';    // 'all' | 'health' | 'finance'
 let dashInited = false;
 
 // ═══════════════════════════════════════════════════════

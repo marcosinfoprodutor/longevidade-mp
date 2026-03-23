@@ -6,6 +6,9 @@ let currentFinanceView = 'portfolio'; // 'portfolio' | 'history'
 
 // ── Module switching ──────────────────────────────────
 function switchModule(mod) {
+  // Block access if user doesn't have permission for this module
+  if (!isAdmin && currentUserModules !== 'all' && currentUserModules !== mod) return;
+
   currentModule = mod;
 
   // Sidebar module buttons
@@ -73,13 +76,22 @@ function closeSidebar() {
 function init(reason) {
   if (dashInited && !reason) return;
 
-  // Pre-render health sidebar and overview (so it's ready when user switches)
+  // Pre-render health sidebar and overview
   initVaccineDefaults();
   renderHealthSidebar();
   renderOverview();
 
-  // Default: Family Office module
-  switchModule('finance');
+  // Hide sidebar buttons user can't access
+  if (!isAdmin) {
+    const healthBtn  = document.querySelector('[data-mod="health"]');
+    const financeBtn = document.querySelector('[data-mod="finance"]');
+    if (healthBtn)  healthBtn.style.display  = (currentUserModules === 'finance') ? 'none' : '';
+    if (financeBtn) financeBtn.style.display = (currentUserModules === 'health')  ? 'none' : '';
+  }
+
+  // Open the first allowed module
+  const defaultMod = (currentUserModules === 'health') ? 'health' : 'finance';
+  switchModule(defaultMod);
 }
 
 // ── DOMContentLoaded wiring ───────────────────────────
