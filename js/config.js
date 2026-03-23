@@ -18,8 +18,8 @@ const storage = firebase.storage();
 // ═══════════════════════════════════════════════════════
 const ADMIN_EMAIL = 'marcosinfoprodutor@gmail.com';
 const ALLOWED_EMAILS = [
-  'marcosinfoprodutor@gmail.com',  // Admin — Marcos Paulo
-  'ycarocouto@gmail.com',          // Dr. Ycaro Couto
+  'marcosinfoprodutor@gmail.com',  // Admin — Marcos Paulo (sempre permitido)
+  // Demais usuários são gerenciados pelo Firestore (allowed_users)
 ];
 let currentUser = null;
 let isAdmin = false;

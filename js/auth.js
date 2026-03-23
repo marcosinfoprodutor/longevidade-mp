@@ -169,7 +169,7 @@ async function loadUsers() {
   const list = document.getElementById('am-users-list');
   list.innerHTML = '<div class="am-empty">Carregando...</div>';
   const users = [];
-  users.push({uid:'__admin__', email:ADMIN_EMAIL, name:'Marcos Paulo (você)', role:'admin', fixed:true});
+  users.push({uid: currentUser?.uid || '__admin__', email:ADMIN_EMAIL, name:'Marcos Paulo (você)', role:'admin', fixed:true});
   const knownEmails = new Set([ADMIN_EMAIL]);
   let firestoreOk = false;
   try {
@@ -284,6 +284,13 @@ async function updateModules(uid, modules) {
 async function toggleLoginHistory(uid, btn) {
   const el = document.getElementById('hist-' + uid);
   if (!el) return;
+  // UIDs falsos (admin hardcoded antes de ter UID real) não têm histórico
+  if (!uid || uid.startsWith('__')) {
+    el.innerHTML = '<div class="u-hist-empty">Nenhum acesso registrado ainda.</div>';
+    el.style.display = el.style.display !== 'none' ? 'none' : 'block';
+    btn.textContent = el.style.display !== 'none' ? '▲ Fechar' : '📋 Histórico';
+    return;
+  }
   if (el.style.display !== 'none') {
     el.style.display = 'none';
     btn.textContent = '📋 Histórico';
